@@ -23,7 +23,7 @@ namespace CWA.DTP
         Mega,
         Adk,
         Leonardo,
-        LeonardoEth,
+        LeonardoEth,l
         Micro,
         Esplora,
         Mini,
