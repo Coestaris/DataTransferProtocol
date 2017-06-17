@@ -23,7 +23,7 @@ namespace CWA.DTP
         Mega,
         Adk,
         Leonardo,
-        LeonardoEth,l
+        LeonardoEth,
         Micro,
         Esplora,
         Mini,
@@ -118,17 +118,14 @@ namespace CWA.DTP
             res += string.Format("Board: {0}\n", Board);
             res += string.Format("BoardArchitecture: {0}\n", BoardArchitecture);
             res += string.Format("StackFreeMemory: {0}\n", StackFreeMemory);
-
             res += string.Format("FlashMemorySize: {0}\n", FlashMemorySize);
             res += string.Format("SRAMMemorySize: {0}\n", SRAMMemorySize);
-
             res += string.Format("CPU_F: {0}\n", CPU_F);
             res += string.Format("GCC_verison: {0}\n", GCC_verison);
             res += string.Format("ARD_version: {0}\n", ARD_version);
             res += string.Format("DTP_version: {0}\n", DTP_version);
             res += string.Format("isConnectSDModule: {0}\n", isConnectSDModule);
             res += string.Format("isConnectTimeModule: {0}\n", isConnectTimeModule);
-
             return res;
         }
     }
