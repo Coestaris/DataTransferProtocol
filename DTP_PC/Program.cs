@@ -36,7 +36,7 @@ namespace TestsForLib
         static unsafe void Main(string[] args)
         {
 
-            new _Sample_DTP_FileTree().Start();
+            new _Sample_DTP_Info().Start();
             //ushort result;
             //byte[] dataRaw = File.ReadAllBytes("Tools.md5");
             //fixed (byte* data = dataRaw)
@@ -54,15 +54,15 @@ namespace TestsForLib
 
     public abstract class _Sample_DTP_TEST
     {
-        protected const string ComName = "COM3";
+        protected const string ComName = "COM4";
 
         protected const int ComSpeed = 115200;
 
-        protected DtpSender sender = new DtpSender(DtpSenderType.SevenByteName, "Coestar");
+        protected Sender sender = new Sender(SenderType.SevenByteName, "Coestar");
 
         protected static SerialPort port = new SerialPort(ComName, ComSpeed);
 
-        protected DtpPacketListener listener = new DtpPacketListener(new SerialPacketReader(port, 1000), new SerialPacketWriter(port));
+        protected PacketListener listener = new PacketListener(new SerialPacketReader(port, 3000), new SerialPacketWriter(port));
 
         protected PacketHandler a;
 
@@ -75,7 +75,7 @@ namespace TestsForLib
         {
             a = new PacketHandler(sender, listener);
 
-            var openFile = a.DTP_OpenFile("dp.zip", false);
+            var openFile = a.DTP_OpenFile("/asd.md5", false);
 
             if (openFile != PacketHandler.WriteReadFileHandleResult.OK)
             {
@@ -93,14 +93,13 @@ namespace TestsForLib
 
             if (len <= packetLen)
             {
-                byte[] buffer;
-               // var readData = a.DTP_GetBytesOfFile(out buffer, 0, len);
-             //  if (readData != PacketHandler.WriteReadFileHandleResult.OK)
-              //  {
-              //      Console.WriteLine(readData.ToString());
-              //      return;
-              //  }
-              //  Console.Write(string.Join("", buffer.Select(p => (char)p)));
+                var readData = a.DTP_GetBytesOfFile(0, len);
+                if (readData.Status != PacketHandler.WriteReadFileHandleResult.OK)
+                {
+                    Console.WriteLine(readData.ToString());
+                    return;
+                }
+                Console.Write(string.Join("", readData.Result.Select(p => (char)p)));
             }
             else
             {
@@ -302,12 +301,9 @@ namespace TestsForLib
                 _oneSProgress = _prcounter - _lProgress;
                 _lProgress = _prcounter;
                 _countOfPrData += _oneSProgress;
-
                 if(lSpeed == 0) Speed = (double)_oneSProgress * PacketSize / 1024 * 2;
                 else Speed = (lSpeed + (double)_oneSProgress * PacketSize / 1024 * 2) / 2;
-
                 lSpeed = Speed;
-
                 if (_lastpr == 0 || _lastpr == float.PositiveInfinity)
                 {
                     if (_oneSProgress == 0) _left = float.PositiveInfinity;
@@ -318,9 +314,7 @@ namespace TestsForLib
                     if (_oneSProgress == 0) _left = float.PositiveInfinity;
                     else _left = (_lastpr + (total - _countOfPrData) / _oneSProgress / 2) / 2;
                 }
-
                 _lastpr = _left;
-
                 Thread.Sleep(500);
             }
         }
@@ -349,19 +343,19 @@ namespace TestsForLib
         private void FileSender_SendingEnd(FileSender.EndArgs arg)
         {
             _end = true;
-            Console.WriteLine("Done in {0}! Speed {1:0.##} KBytes/s", arg.timeSpend, totalBytes / arg.timeSpend / 1024);
+            Console.WriteLine("Done in {0}! Speed {1:0.##} KBytes/s", arg.TimeSpend, totalBytes / arg.TimeSpend / 1024);
         }
 
         private void FileSender_SendingError(FileSender.ErrorArgs arg)
         {
-            Console.Write("ERROR! Code {0}, IsCritical {1}", arg.error.ToString(), arg.IsCritical);
+            Console.Write("ERROR! Code {0}, IsCritical {1}", arg.Error.ToString(), arg.IsCritical);
         }
 
         private void FileSender_SendingProcessChanged(FileSender.ProcessArgs arg)
         {
-            _prcounter = (int)arg.packetSended;
-            total = arg.packetSended + arg.packetLeft;
-            Console.WriteLine("[{2:0}%]. Packet#{0}/{1}. Time Left: {3:0.####} sec. Speed: {4:0.####}KBytes", arg.packetSended, total, (double)arg.packetSended / total * 100, _left, Speed);
+            _prcounter = (int)arg.PacketSended;
+            total = arg.PacketSended + arg.PacketsLeft;
+            Console.WriteLine("[{2:0}%]. Packet#{0}/{1}. Time Left: {3:0.####} sec. Speed: {4:0.####}KBytes", arg.PacketSended, total, (double)arg.PacketSended / total * 100, _left, Speed);
             //Console.Write("+");
         }
     }
@@ -424,6 +418,7 @@ namespace TestsForLib
         }
     }
 
+    /*
     public  class _Sample_DTP_FileTree : _Sample_DTP_TEST
     {
         Directory root = new Directory() { Name = "root" };
@@ -513,13 +508,14 @@ namespace TestsForLib
             return result;
         }
     }
-
+    */
     public class _Sample_DTP_Info : _Sample_DTP_TEST
     {
         public override void Start()
         {
             a = new PacketHandler(sender, listener);
-            Console.WriteLine(a.DTP_GetInfo().ToString());
+
+            //Console.WriteLine(a.DTP_GetInfo().ToString());
         }
     }
 }

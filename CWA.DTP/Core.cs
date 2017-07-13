@@ -46,7 +46,7 @@ namespace CWA.DTP
         }
 
         //WrongSum
-        public WrongPacketInputException(DtpPacket basePacket, Tuple<byte,byte> exceptedCRC, Tuple<byte,byte> packetCRC)
+        public WrongPacketInputException(Packet basePacket, Tuple<byte,byte> exceptedCRC, Tuple<byte,byte> packetCRC)
         {
             Type = ExceptionType.WrongSum;
         }
@@ -147,7 +147,7 @@ namespace CWA.DTP
             var b = (byte)_port.ReadByte();
 
 
-            var len = DtpHelper.GetNumber(a, b) - 255;
+            var len = HelpMethods.GetNumber(a, b) - 255;
             var buffer = new byte[len];
             buffer[0] = a;
             buffer[1] = b;
@@ -175,7 +175,7 @@ namespace CWA.DTP
         }
     }
 
-    public enum DtpCommandType
+    public enum CommandType
     {
         RunFile = 0x101, //+
         File_GetFileTree = 0x103, //+
@@ -205,47 +205,47 @@ namespace CWA.DTP
         File_Close = 0x11d, //+
     };
 
-    public enum DtpAnswerStatus
+    public enum AnswerStatus
     {
         OK = 0x20,
 	    Warning = 0x40,
 	    Error = 0x60
     };
 
-    public enum DtpAnswerDataType
+    public enum AnswerDataType
     {
         CODE = 0x20,
     	DATA = 0x40,
     	NONE = 0x60
     };
 
-    public enum DtpSenderType
+    public enum SenderType
     {
         UnNamedByteMask = 0x20,
     	SevenByteName = 0x40
     };
 
-    public class DtpPacketAnswer
+    public class PacketAnswer
     {
-        public DtpCommandType Command { get; set; }
-        public DtpSender Sender { get; set; }
-        public DtpAnswerStatus Status { get; set; }
-        public DtpAnswerDataType DataType { get; set; }
+        public CommandType Command { get; set; }
+        public Sender Sender { get; set; }
+        public AnswerStatus Status { get; set; }
+        public AnswerDataType DataType { get; set; }
         public byte Code { get; set; }
         public byte[] Data { get; set; }
         private bool isEmpty;
 
-        public DtpPacketAnswer(DtpPacket base_)
+        public PacketAnswer(Packet base_)
         {
             if (base_.IsEmpty) { IsEmpty = true; return; };
             if (base_.Data == null || base_.Data.Length < 4) { IsEmpty = true; return; };
-            Command = (DtpCommandType)DtpHelper.GetNumber(base_.Data[0], base_.Data[1]);
-            Status = (DtpAnswerStatus)base_.Data[2];
-            DataType = ((DtpAnswerDataType)base_.Data[3]);
+            Command = (CommandType)HelpMethods.GetNumber(base_.Data[0], base_.Data[1]);
+            Status = (AnswerStatus)base_.Data[2];
+            DataType = ((AnswerDataType)base_.Data[3]);
             Sender = base_.Sender;
-            if (DataType == DtpAnswerDataType.CODE)
+            if (DataType == AnswerDataType.CODE)
                 Code = base_.Data[4];
-            else if (DataType == DtpAnswerDataType.DATA)
+            else if (DataType == AnswerDataType.DATA)
                 Data = base_.Data.ToList().GetRange(4, base_.Data.Length - 4).ToArray();
         }
 
@@ -259,13 +259,13 @@ namespace CWA.DTP
         {
             switch (DataType)
             {
-                case DtpAnswerDataType.CODE:
+                case AnswerDataType.CODE:
                     return string.Format("Answer:\n   -Answer to Command: {0};\n   -Sender of Answer: {1};\n   -Answer Status: {2};\n   -ErrorCode Type: {3};\n   -Data (Byte): {4};",
                            Command.ToString(), Sender.ToString(), Status.ToString(), DataType.ToString(), Code);
-                case DtpAnswerDataType.DATA:
+                case AnswerDataType.DATA:
                     return string.Format("Answer:\n   -Answer to Command: {0}\n   -Sender of Answer: {1}\n   -Answer Status: {2}\n   -ErrorCode Type: {3}\n   -Data (Byte array. {4} Byte(s)): {5}",
                            Command.ToString(), Sender.ToString(), Status.ToString(), DataType.ToString(), Data.Length, string.Join(",", Data) + " or \"" + string.Join("", Data.Select(p => (char)p)) + "\"");
-                case DtpAnswerDataType.NONE:
+                case AnswerDataType.NONE:
                     return string.Format("Answer:\n   -Answer to Command: {0}\n   -Sender of Answer: {1}\n\t-Answer Status: {2}\n   -ErrorCode Type: {3}\n   -Sender dont send any data.",
                            Command.ToString(), Sender.ToString(), Status.ToString(), DataType.ToString());
                 default:
@@ -274,19 +274,19 @@ namespace CWA.DTP
         }
     }
 
-    public class DtpPacketListener
+    public class PacketListener
     {
         public IPacketReader PacketReader { get; set; }
 
         public IPacketWriter PacketWriter { get; set; }
 
-        public DtpPacketListener(IPacketReader reader, IPacketWriter writer)
+        public PacketListener(IPacketReader reader, IPacketWriter writer)
         {
             PacketReader = reader;
             PacketWriter = writer;
         }
         
-        public DtpPacketAnswer SendAndListenPacket(DtpPacket packet)
+        public PacketAnswer SendAndListenPacket(Packet packet)
         {
             if (packet == null || packet.IsEmpty || packet.TotalData == null) throw new ArgumentException(nameof(packet));
 
@@ -297,11 +297,11 @@ namespace CWA.DTP
 
             var result = PacketReader.Read();
             //Console.WriteLine("Readed packet");
-            return new DtpPacketAnswer(DtpPacket.ParsePacket(result, result.Length));
+            return new PacketAnswer(Packet.ParsePacket(result, result.Length));
         }
     }
     
-    public static class DtpHelper
+    public static class HelpMethods
     {
         public static Tuple<byte, byte> SplitNumber(int num)
         {
@@ -332,7 +332,7 @@ namespace CWA.DTP
 
     }
 
-    public class DtpCrcHandler
+    public class CrCHandler
     {
 #if !SimpleCRC
         const ushort poly = 4129;
@@ -344,7 +344,7 @@ namespace CWA.DTP
 #if SimpleCRC
             fixed (byte* bytes_ = bytes)
             {
-                return (ushort)DtpHelper.ComputeChecksum(bytes_, bytes.Length);
+                return (ushort)HelpMethods.ComputeChecksum(bytes_, bytes.Length);
             }
 #else
             ushort crc = initialValue;
@@ -382,10 +382,10 @@ namespace CWA.DTP
 #endif
     }
 
-    public class DtpSender
+    public class Sender
     {
         public byte[] Mask { get; set; }
-        public DtpSenderType Type { get; set; }
+        public SenderType Type { get; set; }
         private string _name;
 
         public string Name
@@ -400,16 +400,16 @@ namespace CWA.DTP
             }
         }
 
-        public DtpSender(DtpSenderType type)
+        public Sender(SenderType type)
         {
             Type = type;
-            if (type == DtpSenderType.UnNamedByteMask) Mask = RandomGenerateSenderMask();
+            if (type == SenderType.UnNamedByteMask) Mask = RandomGenerateSenderMask();
         }
 
-        public DtpSender(DtpSenderType type, string Name)
+        public Sender(SenderType type, string Name)
         {
             Type = type;
-            if (type == DtpSenderType.UnNamedByteMask) Mask = RandomGenerateSenderMask();
+            if (type == SenderType.UnNamedByteMask) Mask = RandomGenerateSenderMask();
             else this.Name = Name;
         }
 
@@ -423,18 +423,18 @@ namespace CWA.DTP
 
         public override string ToString()
         {
-            if (Type == DtpSenderType.UnNamedByteMask)
+            if (Type == SenderType.UnNamedByteMask)
                 return string.Format("Sender[{0}]", string.Join(",", Mask));
             else return string.Format("Sender[{0}]", Name);
         }
 
-        public static bool operator !=(DtpSender first, DtpSender second)
+        public static bool operator !=(Sender first, Sender second)
         {
             if (first == second) return false;
             else return true;
         }
 
-        public static bool operator ==(DtpSender first, DtpSender second)
+        public static bool operator ==(Sender first, Sender second)
         {
             if (first.Type == second.Type &&
                 Enumerable.SequenceEqual(first.Mask, second.Mask)) return true;
@@ -443,8 +443,8 @@ namespace CWA.DTP
 
         public override bool Equals(object obj)
         {
-            if (typeof(DtpSender) != obj.GetType()) return false;
-            return this == (DtpSender)obj;
+            if (typeof(Sender) != obj.GetType()) return false;
+            return this == (Sender)obj;
         }
 
         public override int GetHashCode()
@@ -453,11 +453,11 @@ namespace CWA.DTP
         }
     }
 
-    public struct DtpPacket
+    public struct Packet
     {
         public short Size { get; set; }
-        public DtpCommandType Command { get; set; }
-        public DtpSender Sender { get; set; }
+        public CommandType Command { get; set; }
+        public Sender Sender { get; set; }
         public byte[] Data { get; set; }
         public byte[] Crc { get; set; }
 
@@ -465,17 +465,17 @@ namespace CWA.DTP
 
         public byte[] TotalData { get; set; }
 
-        public static DtpPacket NULL
+        public static Packet NULL
         {
-            get { return new DtpPacket() { IsEmpty = true }; }
+            get { return new Packet() { IsEmpty = true }; }
         }
 
-        public DtpPacket(byte[] data, DtpCommandType command, DtpSender sender)
+        public Packet(byte[] data, CommandType command, Sender sender)
         {
             Data = data;
             Command = command;
             Sender = sender;
-            DtpCrcHandler crc = new DtpCrcHandler();
+            CrCHandler crc = new CrCHandler();
             Crc = crc.ComputeChecksumBytes(data);
             Size = (short)(data.Length + 14);
             TotalData = new byte[0];
@@ -488,13 +488,13 @@ namespace CWA.DTP
             else return string.Format("Packet[{0}. Data: {1}]", Sender.ToString(), string.Join("", TotalData.Select(p => (char)p)));
         }
 
-        public static bool operator !=(DtpPacket first, DtpPacket second)
+        public static bool operator !=(Packet first, Packet second)
         {
             if (first == second) return false;
             else return true;
         }
 
-        public static bool operator ==(DtpPacket first, DtpPacket second)
+        public static bool operator ==(Packet first, Packet second)
         {
             if (first.Command == second.Command &&
                 Enumerable.SequenceEqual(first.Data, second.Data) &&
@@ -504,8 +504,8 @@ namespace CWA.DTP
 
         public override bool Equals(object obj)
         {
-            if (typeof(DtpPacket) != obj.GetType()) return false;
-            return this == (DtpPacket)obj;
+            if (typeof(Packet) != obj.GetType()) return false;
+            return this == (Packet)obj;
         }
 
         public override int GetHashCode()
@@ -519,26 +519,26 @@ namespace CWA.DTP
             else return string.Format("Packet[{0}. Data: {1}]", Sender.ToString(), string.Join(",", Data.Select(p => p.ToString())));
         }
 
-        public static DtpPacket ParsePacket(byte[] data, int len)
+        public static Packet ParsePacket(byte[] data, int len)
         {
             try
             {
-                var a = new DtpPacket()
+                var a = new Packet()
                 {
                     TotalData = data
                 };
-                var command = (DtpCommandType)DtpHelper.GetNumber(data[2], data[3]);
-                var sender = new DtpSender(DtpSenderType.UnNamedByteMask);
-                var sendertype = (DtpSenderType)data[4];
+                var command = (CommandType)HelpMethods.GetNumber(data[2], data[3]);
+                var sender = new Sender(SenderType.UnNamedByteMask);
+                var sendertype = (SenderType)data[4];
                 sender.Type = sendertype;
                 Buffer.BlockCopy(data, 5, sender.Mask, 0, 7);
-                if (sendertype == DtpSenderType.SevenByteName) sender.Name = Encoding.Default.GetString(sender.Mask);
+                if (sendertype == SenderType.SevenByteName) sender.Name = Encoding.Default.GetString(sender.Mask);
                 a.Sender = sender;
                 a.Size = (short)len;
                 a.Command = command;
                 a.Data = new byte[len - 14];
                 Buffer.BlockCopy(data, 12, a.Data, 0, len - 14);
-                DtpCrcHandler crc = new DtpCrcHandler();
+                CrCHandler crc = new CrCHandler();
                 a.Crc = new byte[2] { data[data.Length - 2], data[data.Length - 1] };
                 var newCrc = crc.ComputeChecksumBytes(a.Data);
                 if (a.Crc[0] != newCrc[0] || a.Crc[1] != newCrc[1]) throw new WrongPacketInputException(a, new Tuple<byte, byte>(newCrc[0], newCrc[1]), new Tuple<byte, byte>(a.Crc[0], a.Crc[1]));
@@ -550,14 +550,14 @@ namespace CWA.DTP
             }
         }
 
-        static public DtpPacket GetPacket(DtpCommandType type, byte[] data, DtpSender sender)
+        static public Packet GetPacket(CommandType type, byte[] data, Sender sender)
         {
-            var result = new DtpPacket(data, type, sender);
+            var result = new Packet(data, type, sender);
             var resdata = new byte[result.Size];
-            var sizeBytes = DtpHelper.SplitNumber(result.Size + 255);
+            var sizeBytes = HelpMethods.SplitNumber(result.Size + 255);
             resdata[0] = sizeBytes.Item1;
             resdata[1] = sizeBytes.Item2;
-            var commandBytes = DtpHelper.SplitNumber((int)type);
+            var commandBytes = HelpMethods.SplitNumber((int)type);
             resdata[2] = commandBytes.Item1;
             resdata[3] = commandBytes.Item2;
             resdata[4] = (byte)sender.Type;
