@@ -1,6 +1,6 @@
 ﻿namespace FileBrowser
 {
-    partial class Form1
+    partial class MainForm
     {
         /// <summary>
         /// Обязательная переменная конструктора.
@@ -35,12 +35,13 @@
             // 
             // listView1
             // 
-            this.listView1.Location = new System.Drawing.Point(12, 34);
+            this.listView1.Location = new System.Drawing.Point(12, 39);
             this.listView1.Name = "listView1";
-            this.listView1.Size = new System.Drawing.Size(665, 411);
+            this.listView1.Size = new System.Drawing.Size(665, 406);
             this.listView1.TabIndex = 0;
             this.listView1.UseCompatibleStateImageBehavior = false;
             this.listView1.View = System.Windows.Forms.View.List;
+            this.listView1.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this.listView1_ColumnClick);
             this.listView1.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.listView1_MouseDoubleClick);
             // 
             // label_path
@@ -54,15 +55,15 @@
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(116, 4);
+            this.button1.Location = new System.Drawing.Point(593, 10);
             this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(75, 23);
+            this.button1.Size = new System.Drawing.Size(84, 23);
             this.button1.TabIndex = 2;
             this.button1.Text = "button1";
             this.button1.UseVisualStyleBackColor = true;
             this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
-            // Form1
+            // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -70,9 +71,11 @@
             this.Controls.Add(this.button1);
             this.Controls.Add(this.label_path);
             this.Controls.Add(this.listView1);
-            this.Name = "Form1";
+            this.Name = "MainForm";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Form1";
-            this.Load += new System.EventHandler(this.Form1_Load);
+            this.Load += new System.EventHandler(this.MainFormLoad);
+            this.SizeChanged += new System.EventHandler(this.MainForm_SizeChanged);
             this.ResumeLayout(false);
             this.PerformLayout();
 

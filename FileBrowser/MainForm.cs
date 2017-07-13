@@ -1,5 +1,6 @@
 ﻿using CWA.DTP;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -15,33 +16,63 @@ using System.Windows.Media.Imaging;
 
 namespace FileBrowser
 {
-    public partial class Form1 : Form
+    public partial class MainForm : Form
     {
-        public Form1()
+        public MainForm()
         {
             InitializeComponent();
         }
-
-        private static Sender sender = new Sender(SenderType.SevenByteName, "Coestar");
-        private static SerialPort port = new SerialPort("COM4", 115200);
-        private static Bitmap folderImage = new Bitmap("folder.png");
-        private static Bitmap backImage = new Bitmap("back.png");
-        private static PacketHandler ph = new PacketHandler(sender, new PacketListener(new SerialPacketReader(port, 4000), new SerialPacketWriter(port)));
+        private string portName = "COM4";
+        private Sender Sender = new Sender(SenderType.SevenByteName, "Coestar");
+        private SerialPort port;
+        private Bitmap folderImage = new Bitmap("folder.png");
+        private Bitmap backImage = new Bitmap("back.png");
+        private Bitmap forwardImage = new Bitmap("forward.png");
+        private PacketHandler ph;
         private List<string> CurrentPath = new List<string>();
+
+        public static float ParseSize(string size)
+        {
+            var data = size.Split(' ');
+            if (!float.TryParse(data[0], out float res)) return 0;
+            return res * (data[1] == "B" ? 1f :
+                                           data[1] == "Kb" ? 1024f :
+                                           data[1] == "Mb" ? 1048576f :
+                                           1073741824f);
+        }
 
         private string ProccedSize(int size)
         {
             if (size < 1024) return size.ToString() + " B";
-            else if (size < 1024 * 1024) return (size / 1024f).ToString() + " Kb";
-            else if (size < 1024 * 1024 * 1024) return (size / 1024f / 1024f).ToString() + " Mb";
-            else return (size / 1024f / 1024f / 1024f).ToString() + " Gb";
+            else if (size < 1048576f) return (size / 1024f).ToString() + " Kb";
+            else if (size < 1073741824f) return (size / 1048576f).ToString() + " Mb";
+            else return (size / 1073741824f).ToString() + " Gb";
         }
 
-        private void SetupFolder()
+        private void TrySetupFolder()
         {
-            string Path = string.Join("", CurrentPath);
-            label_path.Text = Path;
-            listView1.Items.Clear();
+            try
+            {
+                SetupFolder();
+            }
+              catch (WrongPacketInputException ex)
+            {
+                if (System.Windows.Forms.MessageBox.Show(
+                            string.Format("Невозможно получить данные. Произошла ошибка типа WrongPacketInputException (причина {0}), это может означать что устройство работает не коректно и не грамотно обрабатывает входящие и исходящие пакеты. Попробуйте перезагрузить его и нажать \"Повтор\"", ex.Type.ToString()), "Error", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error) == DialogResult.Retry)
+                    TrySetupFolder();
+                else listView1.Items.Clear();
+            }
+            catch (Exception ex)
+            {
+                if (System.Windows.Forms.MessageBox.Show(
+                          string.Format("Невозможно получить данные. Произошла ошибка типа {0}, нажмите \"Повтор\" для повторной попытки. Стек вызовов:\n{1}", ex.GetType().FullName, ex.StackTrace), "Error", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error) == DialogResult.Retry)
+                    TrySetupFolder();
+                else listView1.Items.Clear();
+            }
+        }
+
+        private void RecalcColumnHeaderWidth()
+        {
             float totalWidth = Width;
             float[] WidthCoof =
             {
@@ -52,6 +83,14 @@ namespace FileBrowser
             };
             for (int i = 0; i < listView1.Columns.Count; i++)
                 listView1.Columns[i].Width = (int)(totalWidth * WidthCoof[i]);
+        }
+
+
+        private void SetupFolder()
+        {
+            string Path = string.Join("", CurrentPath);
+            label_path.Text = "Device:\\" + Path.Replace('/', '\\');
+            listView1.Items.Clear();
             var result = ph.DTP_GetDirectoriesAndFiles(Path);
             if (result.Status != PacketHandler.FileDirHandleResult.OK)
             {
@@ -66,6 +105,7 @@ namespace FileBrowser
                 listView1.Items.Add(item);
             }
             ImageList il = new ImageList();
+            listView1.SmallImageList?.Images.Clear();
             foreach (var a in result.ResultFiles)
             {
                 il.Images.Add(IconManager.FindIconForFilename(a, false));
@@ -75,22 +115,63 @@ namespace FileBrowser
             }
             il.Images.Add(folderImage);
             il.Images.Add(backImage);
+            il.Images.Add(forwardImage);
             listView1.SmallImageList = il;
+            listView1.ListViewItemSorter = new ListViewComparer(lastColumn, lastOrder);
+            listView1.Sort();
+
+            listView1.Columns[lastColumn].ImageIndex = listView1.SmallImageList.Images.Count - lastOrder == SortOrder.Descending ? 1 : 2;
         }
 
-        private void Form1_Load(object sender, EventArgs e)
+        private void GetData()
         {
             listView1.View = View.Details;
             listView1.FullRowSelect = true;
+            listView1.Columns.Clear();
             listView1.Columns.AddRange(new ColumnHeader[]
             {
-                new ColumnHeader() {Text = "Name" },
+                new ColumnHeader() {Text = "Name"},
                 new ColumnHeader() {Text = "Size" },
-                new ColumnHeader(){Text = "Creation Date" },
-                new ColumnHeader(){Text = "Flags" }
+                new ColumnHeader() {Text = "Creation Date" },
+                new ColumnHeader() {Text = "Flags" }
             });
             CurrentPath.Add("/");
             SetupFolder();
+            RecalcColumnHeaderWidth();
+        }
+
+        private void MainFormLoad(object sender, EventArgs e)
+        {
+            MainForm_SizeChanged(null, null);
+            try
+            {
+                port = new SerialPort(portName, 115200);
+                ph = new PacketHandler(Sender, new PacketListener(new SerialPacketReader(port, 4000), new SerialPacketWriter(port)));
+            } catch (Exception ex)
+            {
+                if (System.Windows.Forms.MessageBox.Show(
+                    string.Format("Произошла ошибка типа {0}.\n{2}\n\nНажмите \"Повтор\" для повторной попытки. Стек вызовов:\n{1}", ex.GetType().FullName, ex.StackTrace, ex.Message), "Error", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error) == DialogResult.Retry)
+                    MainFormLoad(null, null);
+                else Environment.Exit(1);
+            }
+            try
+            {
+                GetData();
+            }
+            catch (WrongPacketInputException ex)
+            {
+                if (System.Windows.Forms.MessageBox.Show(
+                    string.Format("Невозможно получить данные. Произошла ошибка типа WrongPacketInputException (причина {0}), это может означать что устройство работает не коректно и не грамотно обрабатывает входящие и исходящие пакеты. Попробуйте перезагрузить его и нажать \"Повтор\"", ex.Type.ToString()), "Error", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error) == DialogResult.Retry)
+                    MainFormLoad(null, null);
+                else Environment.Exit(1);
+            }
+            catch (Exception ex)
+            {
+                if (System.Windows.Forms.MessageBox.Show(
+                    string.Format("Невозможно получить данные.\n{2}\n\nПроизошла ошибка типа {0}, нажмите \"Повтор\" для повторной попытки. Стек вызовов:\n{1}", ex.GetType().FullName, ex.StackTrace, ex.Message), "Error", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error) == DialogResult.Retry)
+                    MainFormLoad(null, null);
+                else Environment.Exit(1);
+            }
         }
 
         private void listView1_MouseDoubleClick(object sender, MouseEventArgs e)
@@ -101,14 +182,14 @@ namespace FileBrowser
                     if (listView1.SelectedIndices[0] == 0)
                     {
                         CurrentPath.RemoveAt(CurrentPath.Count - 1);
-                        SetupFolder();
+                        TrySetupFolder();
                     }
                     else System.Windows.Forms.MessageBox.Show("Its not FOLDER");
                 else
                 {
                     string path = listView1.SelectedItems[0].SubItems[0].Text.Trim('[', ']');
                     CurrentPath.Add(CurrentPath.Last().EndsWith("/") ? path : '/' + path);
-                    SetupFolder();
+                    TrySetupFolder();
                 }
             }
         }
@@ -116,10 +197,96 @@ namespace FileBrowser
         private void button1_Click(object sender, EventArgs e)
         {
             new SendDialog(ph, "CWADTP.pdb", "/CWADTP.pdb").ShowDialog();
-            SetupFolder();
+            TrySetupFolder();
+        }
+
+        int lastColumn = 0;
+        SortOrder lastOrder = SortOrder.Ascending;
+
+        private void listView1_ColumnClick(object sender, ColumnClickEventArgs e)
+        {
+            if (e.Column == lastColumn)
+            {
+                if (lastOrder == SortOrder.Ascending)
+                {
+                    listView1.Columns[lastColumn].ImageIndex = listView1.SmallImageList.Images.Count - 1;
+                    lastOrder = SortOrder.Descending;
+                }
+                else
+                {
+                    listView1.Columns[lastColumn].ImageIndex = listView1.SmallImageList.Images.Count - 2;
+                    lastOrder = SortOrder.Ascending;
+                }
+                listView1.ListViewItemSorter = new ListViewComparer(e.Column, lastOrder);
+            }
+            else
+            {
+                listView1.Columns[lastColumn].ImageIndex = -1;
+                listView1.Columns[e.Column].ImageIndex = listView1.SmallImageList.Images.Count - 2;
+                lastOrder = SortOrder.Ascending;
+                listView1.ListViewItemSorter = new ListViewComparer(e.Column, SortOrder.Ascending);
+            }
+            listView1.Sort();
+            lastColumn = e.Column;
+        }
+
+        private void MainForm_SizeChanged(object sender, EventArgs e)
+        {
+            listView1.Width = Width - 40;
+            listView1.Height = Height - 90;
+            RecalcColumnHeaderWidth();
         }
     }
 
+    class ListViewComparer : IComparer
+    {
+        private int col;
+        private SortOrder order;
+
+        public ListViewComparer()
+        {
+            col = 0;
+            order = SortOrder.Ascending;
+        }
+
+        public ListViewComparer(int column, SortOrder order)
+        {
+            col = column;
+            this.order = order;
+        }
+
+        public int Compare(object x, object y)
+        {
+            ListViewItem xI = (ListViewItem)x;
+            ListViewItem yI = (ListViewItem)y;
+            int returnVal = -1;
+            if (col == 0)
+            {
+                if (xI.SubItems[1].Text.StartsWith("<") || yI.SubItems[1].Text.StartsWith("<")) return 0;
+                if (xI.SubItems[0].Text == "..." || yI.SubItems[0].Text == "...") return 0;
+                returnVal = String.Compare(xI.SubItems[col].Text, yI.SubItems[col].Text);
+            }
+            else if (col == 1)
+            {
+                if (xI.SubItems[1].Text.StartsWith("<") || yI.SubItems[1].Text.StartsWith("<")) return 0;
+                if (xI.SubItems[0].Text == "..." || yI.SubItems[0].Text == "...") return 0;
+                float xVal = MainForm.ParseSize(xI.SubItems[col].Text);
+                float yVal = MainForm.ParseSize(yI.SubItems[col].Text);
+                returnVal = Comparer.Default.Compare(xVal, yVal);
+            }
+            else if (col == 2)
+            {
+                if (xI.SubItems[0].Text == "..." || yI.SubItems[0].Text == "...") return 0;
+                if (xI.SubItems[1].Text.StartsWith("<") || yI.SubItems[1].Text.StartsWith("<")) return 0;
+                DateTime xVal = DateTime.Parse(xI.SubItems[col].Text);
+                DateTime yVal = DateTime.Parse(yI.SubItems[col].Text);
+                returnVal = DateTime.Compare(xVal, yVal);
+            }
+            if (order == SortOrder.Descending)
+                returnVal *= -1;
+            return returnVal;
+        }
+    }
     /// <summary>
     /// Internals are mostly from here: http://www.codeproject.com/Articles/2532/Obtaining-and-managing-file-and-folder-icons-using
     /// Caches all results.

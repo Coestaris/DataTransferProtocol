@@ -45,6 +45,7 @@ namespace CWA.DTP
             Type = ExceptionType.WrongDataLenInput;
         }
 
+        //TODO Конкретную дату под конкретный случай, а лучше конечно же отдельные классы, леньтяй
         //WrongSum
         public WrongPacketInputException(Packet basePacket, Tuple<byte,byte> exceptedCRC, Tuple<byte,byte> packetCRC)
         {
@@ -289,12 +290,8 @@ namespace CWA.DTP
         public PacketAnswer SendAndListenPacket(Packet packet)
         {
             if (packet == null || packet.IsEmpty || packet.TotalData == null) throw new ArgumentException(nameof(packet));
-
-
             PacketWriter.Write(packet.TotalData);
-//            Console.WriteLine("Sended packet");
-
-
+            //Console.WriteLine("Sended packet");
             var result = PacketReader.Read();
             //Console.WriteLine("Readed packet");
             return new PacketAnswer(Packet.ParsePacket(result, result.Length));
