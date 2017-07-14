@@ -1,67 +1,35 @@
-﻿using System;
+﻿/*
+    The MIT License(MIT)
+
+    Copyright (c) 2016 - 2017 Kurylko Maxim Igorevich
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+    
+    The above copyright notice and this permission notice shall be included in
+    all copies or substantial portions of the Software.
+    
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+    THE SOFTWARE.
+
+*/
+
+using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading;
 
 namespace CWA.DTP
 {
-    public enum CardType
-    {
-        SD1 = 0x10,
-        SD2 = 0x20,
-        SDHC = 0x30,
-        Unknown = 0x40
-    };
-
-    public enum Board
-    {
-        Yun,
-        Uno,
-        DueMulanove,
-        Nano,
-        Mega,
-        Adk,
-        Leonardo,
-        LeonardoEth,
-        Micro,
-        Esplora,
-        Mini,
-        Ethernet,
-        Fio,
-        BT,
-        LilypadUSB,
-        Lilypad,
-        Pro,
-        NG,
-        RobotControl,
-        RobotMotor,
-        Gemma,
-        CircuitPlay,
-        YunMini,
-        Industrial101,
-        LinioOne,
-        UnoWifi,
-        Unknown
-    };
-
-    public enum BoardArchitecture
-    {
-        AVR,
-        ARM,
-        I686,
-        I586,
-        Unknown
-    };
-
-    public enum SdCardFatType
-    {
-        FAT12 = 12,
-        FAT16 = 16,
-        FAT32 = 32,
-    };
-
     public class PacketHandler
     {
         private static readonly byte[] EmptyData = { 1 };
@@ -90,9 +58,9 @@ namespace CWA.DTP
             Sender = sender;
             if (StartTest)
             {
-                if (!DTP_Test()) throw new Exception("Cant init"); //TODO: Exception
+                if (!DeviceTest()) throw new Exception("Cant init"); //TODO: Exception
             }
-            if (AutoSyncTime) DTP_SyncTime();
+            if (AutoSyncTime) Device_SyncTime();
         }
 
         #region Classes
@@ -299,6 +267,13 @@ namespace CWA.DTP
             }
         }
 
+        public enum FileExistsResult
+        {
+            Fail,
+            Exists,
+            NotExists
+        }
+
         public enum FileDirHandleResult
         {
             OK,
@@ -332,6 +307,12 @@ namespace CWA.DTP
             public int ErrorByteIndex { get; internal set; }
         }
 
+        public class FileLengthRequestResult
+        {
+            public FileDirHandleResult Status { get; internal set; } = FileDirHandleResult.Fail;
+            public long Length { get; internal set; } = 0;
+        }
+
         public class GetFilesOrDirsRequestResult
         {
             public FileDirHandleResult Status { get; internal set; } = FileDirHandleResult.Fail;
@@ -341,33 +322,33 @@ namespace CWA.DTP
 
         #endregion
 
-        public bool DTP_Test()
+        public bool DeviceTest()
         {
             var result = GetResult(CommandType.Test);
             return !result.IsEmpty;
         }
 
-        public bool DTP_DataTest(byte[] data)
+        public bool DeviceDataTest(byte[] data)
         {
             var result = GetResult(CommandType.DataTest, data);
             return (!result.IsEmpty && result.Status == AnswerStatus.OK && result.Data.ToList().SequenceEqual(data));
         }
 
-        public long DTP_SyncTime()
+        public long Device_SyncTime()
         {
-            if (!DTP_GetDateTime(out DateTime deviceTime)) //TODO чтото
-                ;
+            if (!Device_GetTime(out DateTime deviceTime)) //TODO чтото
+                return 0;
             double diff = Math.Abs((DateTime.Now - deviceTime).TotalSeconds);
             if (diff > 20)
             {
-                if (!DTP_SetTime(DateTime.Now)) //TODO чтото
-                    ;
+                if (!Device_SetTime(DateTime.Now))
+                    return 0;
                 return (long)diff;
             }
-            else return 0;
+            else return -1;
         }
 
-        public FileDirHandleResult DTP_CreateFile(string FileName)
+        public FileDirHandleResult File_Create(string FileName)
         {
             var result = GetResult(CommandType.File_CreateFile, Encoding.Default.GetBytes(FileName));
             if (result.IsEmpty) return FileDirHandleResult.Fail;
@@ -384,7 +365,16 @@ namespace CWA.DTP
             }
         }
 
-        public FileDirHandleResult DTP_DeleteFile(string FileName)
+        public FileExistsResult File_Exists(string FileName)
+        {
+            var result = GetResult(CommandType.File_Exists, Encoding.Default.GetBytes(FileName));
+            if (result.IsEmpty) return FileExistsResult.Fail;
+            if (result.Code == 1) return FileExistsResult.NotExists;
+            else return FileExistsResult.Exists;
+           
+        }
+
+        public FileDirHandleResult File_Delete(string FileName)
         {
             var result = GetResult(CommandType.File_DeleteFile, Encoding.Default.GetBytes(FileName));
             if (result.IsEmpty) return FileDirHandleResult.Fail;
@@ -401,7 +391,7 @@ namespace CWA.DTP
             }
         }
 
-        public FileDirHandleResult DTP_CreateDirectory(string DirectoryName, bool CreateNecessary)
+        public FileDirHandleResult Dir_Create(string DirectoryName, bool CreateNecessary)
         {
             var data = new List<byte>();
             data.AddRange(Encoding.Default.GetBytes(DirectoryName));
@@ -423,7 +413,7 @@ namespace CWA.DTP
             }
         }
 
-        public FileDirHandleResult DTP_DeleteDirectory(string DirectoryName, bool DeleteSubItems)
+        public FileDirHandleResult Dir_Delete(string DirectoryName, bool DeleteSubItems)
         {
             var data = new List<byte>();
             data.AddRange(Encoding.Default.GetBytes(DirectoryName));
@@ -445,7 +435,7 @@ namespace CWA.DTP
             }
         }
 
-        public WriteReadFileHandleResult DTP_OpenFile(string FileName, bool ClearFile)
+        public WriteReadFileHandleResult File_Open(string FileName, bool ClearFile)
         {
             var e = Encoding.Default.GetBytes(FileName).ToList();
             e.Add(ClearFile ? (byte)1 : (byte)0);
@@ -464,7 +454,7 @@ namespace CWA.DTP
             }
         }
 
-        public DataRequestResult DTP_GetCRC16OfFile(HashAlgorithm Algorithm)
+        public DataRequestResult File_GetCrC16(HashAlgorithm Algorithm)
         {
             var result_ = new DataRequestResult();
             var result = GetResult(CommandType.FILE_GetHashSumOfFile);
@@ -491,22 +481,22 @@ namespace CWA.DTP
             return result_;
         }
 
-        public PacketAnswerCardInfo DTP_GetCardInfo()
+        public PacketAnswerCardInfo Device_GetCardInfo()
         {
             return new PacketAnswerCardInfo(GetResult(CommandType.GetSDInfo));
         }
 
-        public PacketAnswerFileInfo DTP_GetFileInfo(string Name)
+        public PacketAnswerFileInfo File_GetInfo(string Name)
         {
             return new PacketAnswerFileInfo(GetResult(CommandType.File_GetFileInfo, Encoding.Default.GetBytes(Name)), Name);
         }
 
-        public PacketAnswerTotalInfo DTP_GetInfo()
+        public PacketAnswerTotalInfo Device_GetGlobalInfo()
         {
             return new PacketAnswerTotalInfo(GetResult(CommandType.GetInfo));
         }
 
-        public DataRequestResult DTP_GetBytesOfFile(int offset, int length)
+        public DataRequestResult File_Read(int offset, int length)
         {
             var result_ = new DataRequestResult();
             byte[] data_ = new byte[8];
@@ -518,8 +508,9 @@ namespace CWA.DTP
                 result_.Status = WriteReadFileHandleResult.Fail;
                 return result_;
             }
-            if (result.Data.Length == 1) switch(result.Data[0])
-            {
+            if (result.Data.Length == 1 && result.Status == AnswerStatus.Error)
+                switch (result.Data[0])
+                {
                     case (1):
                         result_.Status = WriteReadFileHandleResult.FileNotOpened;
                         return result_;
@@ -535,7 +526,7 @@ namespace CWA.DTP
             return result_;
         }
 
-        public GetFilesOrDirsRequestResult DTP_GetFiles(string DirectoryName)
+        public GetFilesOrDirsRequestResult Dir_GetFiles(string DirectoryName)
         {
             var files = new List<string>();
             var result = GetResult(CommandType.File_GetFileTree, Encoding.Default.GetBytes(DirectoryName));
@@ -549,7 +540,7 @@ namespace CWA.DTP
             };
         }
         
-        public GetFilesOrDirsRequestResult DTP_GetDirectories(string DirectoryName)
+        public GetFilesOrDirsRequestResult Dir_GetSubDirs(string DirectoryName)
         {
            var dirs = new List<string>();
             var result = GetResult(CommandType.File_GetFileTree, Encoding.Default.GetBytes(DirectoryName));
@@ -564,7 +555,7 @@ namespace CWA.DTP
             };
         }
 
-        public GetFilesOrDirsRequestResult DTP_GetDirectoriesAndFiles(string DirectoryName)
+        public GetFilesOrDirsRequestResult Dir_GetFilesAndSubDirs(string DirectoryName)
         {
             var dirs = new List<string>();
             var files = new List<string>();
@@ -582,37 +573,41 @@ namespace CWA.DTP
             };
         }
 
-        public bool DTP_GetLenOfFile(out int Length)
+        public FileLengthRequestResult File_GetLength()
         {
-            Length = 0;
+            var Length = 0;
             var result = GetResult(CommandType.File_GetFileLength);
-            if (result.IsEmpty) return false;
-            if (result.Status == AnswerStatus.Error) return false;
+            if (result.IsEmpty) return new FileLengthRequestResult();
+            if (result.Status == AnswerStatus.Error) return new FileLengthRequestResult();
             Length = BitConverter.ToInt32(result.Data, 0);
-            return true;
+            return new FileLengthRequestResult()
+            {
+                Length = Length,
+                Status = FileDirHandleResult.OK
+            };
         }
 
-        public bool DTP_CloseFile()
+        public bool File_Close()
         {
             var result = GetResult(CommandType.File_Close);
             return !result.IsEmpty;
         }
         
-        public bool DTP_WriteBytesToFile(byte[] bytes)
+        public bool File_Rewrite(byte[] bytes)
         {
             var result = GetResult(CommandType.File_WriteDataToFile, bytes);
             if (result.IsEmpty) return false;
             return result.Code == 0;
         }
 
-        public bool DTP_AppendBytesToFile(byte[] bytes)
+        public bool File_Append(byte[] bytes)
         {
             var result = GetResult(CommandType.File_AppendDataToFile, bytes);
             if (result.IsEmpty) return false;
             return result.Code == 0;
         }
 
-        public bool DTP_SetTime(DateTime dt)
+        public bool Device_SetTime(DateTime dt)
         {
             DateTime now = dt;
             byte[] data = new byte[7] {
@@ -627,7 +622,7 @@ namespace CWA.DTP
             return !result.IsEmpty;
         }
 
-        public bool DTP_GetDateTime(out DateTime result_)
+        public bool Device_GetTime(out DateTime result_)
         {
             result_ = new DateTime();
             var result = GetResult(CommandType.GetDateTime);
@@ -641,238 +636,6 @@ namespace CWA.DTP
                     result.Data[2]
                  );
             return true;
-        }
-    }
-
-    public class FileSender
-    {
-        private byte[] _data;
-
-        private bool CheckSum { get; set; } = true;
-
-        [Flags]
-        public enum SecurityFlags
-        {
-            VerifyCheckSum = 0,
-            VerifyLengh = 1
-        }
-
-        private bool CheckLen { get; set; } = true;
-
-        public int PacketLength { get; set; } = 3200;
-
-        public PacketHandler BaseHandler { get; private set; }
-        
-        public FileSender(PacketHandler base_, int _packetLength, SecurityFlags flags)
-        {
-            CheckSum = flags.HasFlag(SecurityFlags.VerifyCheckSum);
-            CheckLen = flags.HasFlag(SecurityFlags.VerifyLengh);
-            BaseHandler = base_;
-            PacketLength = _packetLength;
-        }
-
-        public FileSender(PacketHandler base_, SecurityFlags flags)
-        {
-            CheckSum = (flags & SecurityFlags.VerifyCheckSum) != 0;
-            CheckLen = (flags & SecurityFlags.VerifyLengh) != 0;
-            BaseHandler = base_;
-        }
-
-        public class ProcessArgs : EventArgs
-        {
-            public long TimeSpend { get; private set; }
-            public long TimeLeft { get; private set; }
-            public long PacketsLeft { get; private set; }
-            public long PacketSended { get; private set; }
-
-            public double Speed { get; private set; } //bytes per sec
-            public int PacketsLength { get; private set; }
-
-            public ProcessArgs(long timeSpend, long timeLeft, long packetLeft, long packetSended, double speed, int packetLength)
-            {
-                this.TimeSpend = timeSpend;
-                this.TimeLeft = timeLeft;
-                this.PacketsLeft = packetLeft;
-                this.PacketSended = packetSended;
-                this.Speed = speed;
-                this.PacketsLength = packetLength;
-            }
-        }
-
-        public class EndArgs : EventArgs
-        {
-            public double TimeSpend { get; private set; }
-
-            public EndArgs(double timeSpend)
-            {
-                this.TimeSpend = timeSpend;
-            }
-        }
-
-        public class ErrorArgs : EventArgs
-        {
-            public SendError Error { get; private set; }
-            public bool IsCritical { get; private set; }
-
-            public ErrorArgs(SendError error, bool isCritical)
-            {
-                this.Error = error;
-                IsCritical = isCritical;
-            }
-        }
-
-        public delegate void ProcessHandler(ProcessArgs arg);
-
-        public delegate void EndHandler(EndArgs arg);
-
-        public delegate void ErrorHandler(ErrorArgs arg);
-
-        public event ProcessHandler SendingProcessChanged;
-
-        public event EndHandler SendingEnd;
-
-        public event ErrorHandler SendingError;
-
-        private void RaiseProcessEvent(ProcessArgs arg)
-        {
-            SendingProcessChanged?.Invoke(arg);
-        }
-
-        private void RaiseEndEvent(EndArgs arg)
-        {
-            SendingEnd?.Invoke(arg);
-        }
-
-        private void RaiseErrorEvent(ErrorArgs arg)
-        {
-            SendingError?.Invoke(arg);
-        }
-
-        public enum SendError
-        {
-            CantSendPacket,
-            CantCreateFile,
-            CantDeleteFile,
-            CantOpenFile,
-            CantCloseFile,
-            NotEqualSizes,
-            CantGetHashOfFile,
-            HashesNotEqual,
-            CantGetFileSize,
-        }
-
-        private bool HandleFiles(string NewName)
-        {
-            var res = BaseHandler.DTP_CreateFile(NewName);
-            if (res == PacketHandler.FileDirHandleResult.OK) { return true; }
-            else if (res == PacketHandler.FileDirHandleResult.Fail)
-            {
-                RaiseErrorEvent(new ErrorArgs(SendError.CantCreateFile, true));
-                return false;
-            }
-            else
-            {
-                if (BaseHandler.DTP_DeleteFile(NewName) == PacketHandler.FileDirHandleResult.Fail)
-                {
-                    RaiseErrorEvent(new ErrorArgs(SendError.CantDeleteFile, true));
-                    return false;
-                }
-                if (BaseHandler.DTP_CreateFile(NewName) == PacketHandler.FileDirHandleResult.Fail)
-                {
-                    RaiseErrorEvent(new ErrorArgs(SendError.CantCreateFile, true));
-                    return false;
-                }
-            }
-            if (BaseHandler.DTP_OpenFile(NewName, true) != PacketHandler.WriteReadFileHandleResult.OK)
-            {
-                RaiseErrorEvent(new ErrorArgs(SendError.CantOpenFile, true));
-                return false;
-            };
-            return true;
-        }
-        
-        private bool CompareLength()
-        {
-            var sizeResult = BaseHandler.DTP_GetLenOfFile(out int size);
-            if (!sizeResult)
-            {
-                RaiseErrorEvent(new ErrorArgs(SendError.CantGetFileSize, true));
-                return false;
-            }
-            if (size != _data.Length)
-            {
-                RaiseErrorEvent(new ErrorArgs(SendError.NotEqualSizes, true));
-                return false;
-            }
-            return true;
-        }
-
-        private bool CompareHash()
-        {
-            var crcres = BaseHandler.DTP_GetCRC16OfFile(PacketHandler.HashAlgorithm.CRC32);
-            if (crcres.Status != PacketHandler.WriteReadFileHandleResult.OK)
-            {
-                RaiseErrorEvent(new ErrorArgs(SendError.CantGetHashOfFile, true));
-                return false;
-            }
-            var localcrc = new CrCHandler().ComputeChecksumBytes(_data);
-            if (crcres.Result[0] != localcrc[0] || crcres.Result[1] != localcrc[1]) RaiseErrorEvent(new ErrorArgs(SendError.HashesNotEqual, false));
-            return true;
-        }
-
-        public bool SendFileSync(string pcName, string NewName)
-        {
-            DateTime startTime = DateTime.Now;
-            if (!HandleFiles(NewName)) return false;
-            _data = File.ReadAllBytes(pcName);
-            var b = _data.Split(PacketLength);
-            int totalCount = b.Count();
-            int Current = 0;
-            foreach (var c in b)
-            {
-                Current++;
-                if (!BaseHandler.DTP_AppendBytesToFile(c.ToArray()))
-                {
-                    RaiseErrorEvent(new ErrorArgs(SendError.CantSendPacket, true));
-                    return false;
-                }
-                RaiseProcessEvent(new ProcessArgs((long)(DateTime.Now - startTime).TotalSeconds, 0, totalCount - Current, Current, 0, PacketLength));
-            }
-            if (CheckLen)
-            {
-                if (!CompareLength()) return false;
-                if (!BaseHandler.DTP_CloseFile())
-                {
-                    RaiseErrorEvent(new ErrorArgs(SendError.CantCloseFile, true));
-                    return false;
-                };
-            }
-            if (CheckSum)
-            {
-                if (!CompareHash()) return false;
-            }
-            RaiseEndEvent(new EndArgs((DateTime.Now - startTime).TotalSeconds));
-            _data = null;
-            return true;
-        }
-
-        public void SendFileAsync(string pcName, string NewName)
-        {
-           new Thread(p => 
-           {
-               SendFileSync(pcName, NewName);
-           }).Start();
-        }
-    }
-    
-    internal static class ExtentionMethod
-    {
-        internal static IEnumerable<IEnumerable<T>> Split<T>(this T[] array, int size)
-        {
-            for (var i = 0; i < (float)array.Length / size; i++)
-            {
-                yield return array.Skip(i * size).Take(size);
-            }
         }
     }
 }

@@ -38,7 +38,8 @@ const int DirectoryBufferSize PROGMEM = 40;
 //#define PacketDebugInfo;
 //#define OptimizeSendrerBytes
 //#define PacketFileDebug
-//#define SimpleCRC
+#define SimpleCRC
+//#define DEBUG
 
 #ifndef SimpleCRC
 #include "FastCRC\FastCRC.h"

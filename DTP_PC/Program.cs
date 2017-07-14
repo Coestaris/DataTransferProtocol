@@ -36,7 +36,7 @@ namespace TestsForLib
         static unsafe void Main(string[] args)
         {
 
-            new _Sample_DTP_Info().Start();
+            new _Sample().Start();
             //ushort result;
             //byte[] dataRaw = File.ReadAllBytes("Tools.md5");
             //fixed (byte* data = dataRaw)
@@ -54,7 +54,7 @@ namespace TestsForLib
 
     public abstract class _Sample_DTP_TEST
     {
-        protected const string ComName = "COM4";
+        protected const string ComName = "COM5";
 
         protected const int ComSpeed = 115200;
 
@@ -69,453 +69,490 @@ namespace TestsForLib
         public abstract void Start();
     }
 
-    public class _Sample_DTP_DataReader : _Sample_DTP_TEST
+    public class _Sample : _Sample_DTP_TEST
     {
         public override void Start()
         {
             a = new PacketHandler(sender, listener);
 
-            var openFile = a.DTP_OpenFile("/asd.md5", false);
+            if(!a.DeviceTest()) Console.WriteLine("Cant test device");
 
-            if (openFile != PacketHandler.WriteReadFileHandleResult.OK)
-            {
-                Console.WriteLine(openFile.ToString());
-                return;
-            }
+            if (a.Device_SyncTime() == 0) Console.WriteLine("Cant sync time");
 
-            int len = 0;
+            var f = new SdCardFile("/help.txt", a);
 
-            if(!a.DTP_GetLenOfFile(out len)) Console.WriteLine("cant get length");
+            if (!f.IsExists)
+                f.Create();
 
-            Console.WriteLine(len);
+            f.Open();
 
-            int packetLen = 2000;
+            var bf = f.GetBinnaryFile();
+            f.ClearAllBytes();
 
-            if (len <= packetLen)
-            {
-                var readData = a.DTP_GetBytesOfFile(0, len);
-                if (readData.Status != PacketHandler.WriteReadFileHandleResult.OK)
-                {
-                    Console.WriteLine(readData.ToString());
-                    return;
-                }
-                Console.Write(string.Join("", readData.Result.Select(p => (char)p)));
-            }
-            else
-            {
-                int i = 0;
-                byte[] totalBuff = new byte[len];
-                int readedBytes = 0;
-                while (true)
-                {
-                    i++;
-                    byte[] buffer = new byte[0];
-                    int maxCount = 10;
+            bf.CursorPos = 15;
+            var res1 = bf.Read(out var st1);
+            if (st1) Console.WriteLine(res1);
 
-                    bool succsess = false;
+            bf.CursorPos = 105;
+            var res2 = bf.Read(out var st2);
+            if (st1) Console.WriteLine(res2);
 
-                    while (!succsess)
-                    {
-                        try
-                        {
-                            Console.WriteLine(readedBytes);
-                           // var readData = a.DTP_GetBytesOfFile(out buffer, readedBytes, packetLen);
-                          //  if (readData != PacketHandler.WriteReadFileHandleResult.OK)
-                         //   {
-                         //       Console.WriteLine(readData.ToString());
-                        //        throw new Exception();
-                        //    }
-                            succsess = true;
-                        }
-                        catch (WrongPacketInputException e)
-                        {
-                            Console.Write("Error: ");
-                            Console.WriteLine(e.Type);
-                            a.Listener.PacketReader.Reset();
-                            Console.WriteLine("Tryes: " + maxCount--.ToString());
-                            
-                        }
-                        catch(Exception e)
-                        {
-                            Console.Write("Unknown error: ");
-                            Console.WriteLine(e.Message);
-                            a.Listener.PacketReader.Reset();
-                            Console.WriteLine("Tryes: " + maxCount--.ToString());
+            bf.CursorPos = 166;
+            var res3 = bf.Read(out var st3);
+            if (st1) Console.WriteLine(res3);
 
-                        }
-
-                        if(maxCount == 0)
-                        {
-                            Console.WriteLine("ERROR. Out of tries");
-                            return;
-                        }
-                    }
-                    //Console.WriteLine(i);
-                    Console.WriteLine($"[{(double)readedBytes / len * 100 :0.#}]Packet#{i}/{len / packetLen}. Packet Len: {buffer.Length}.");
-                    Buffer.BlockCopy(buffer, 0, totalBuff, readedBytes, buffer.Length);
-                    readedBytes += buffer.Length;
-                    //buffer = null;
-                }
-                Console.WriteLine(readedBytes);
-                File.WriteAllBytes("dp.zip", totalBuff);
-
-
-            }
-
-        }
-/*
-        public bool tryRead()
-        {
-            try
-            {
-                var readData = a.DTP_GetBytesOfFile(out buffer, readedBytes, packetLen);
-                if (readData != PacketHandler.WriteReadFileHandleResult.OK)
-                {
-                    Console.WriteLine(readData.ToString());
-                    throw new Exception();
-                }
-
-            }
-            catch
-            {
-
-            }
-        }*/
-    }
-
-    public class _Sample_DTP_DateTime : _Sample_DTP_TEST
-    {
-        public override void Start()
-        {
-            a = new PacketHandler(sender, listener);
-            //GetDate();
-
-            var openFileRes = a.DTP_OpenFile("Tools.md5", false);
-
-            if(openFileRes != PacketHandler.WriteReadFileHandleResult.OK)
-            {
-                Console.WriteLine(openFileRes.ToString());
-                return;
-            }
-
-            var res = a.DTP_GetCRC16OfFile(PacketHandler.HashAlgorithm.CRC32);
-
-            if(res.Status != PacketHandler.WriteReadFileHandleResult.OK)
-            {
-                Console.WriteLine(res.Status.ToString());
-                if (res.Status == PacketHandler.WriteReadFileHandleResult.CantReadData) Console.WriteLine(res.ErrorByteIndex);
-                return;
-            } else
-            {
-                Console.WriteLine("Ok");
-                Console.WriteLine(string.Join(",",res.Result));
-            }
-            if (!a.DTP_CloseFile())
-            {
-                Console.WriteLine("Cant close file");
-                return;
-            }
-        }
-
-        private void GetDate()
-        {
-            for (int i = 0; i <= 5; i++) 
-            {
-                DateTime dt;
-                if (!a.DTP_GetDateTime(out dt)) Console.WriteLine("Cant get datetime");
-                Console.WriteLine(dt.ToString());
-                Thread.Sleep(1000);
-            }
-        
+            f.Close();
         }
     }
 
-    public class _Sample_DTP_CardInfo : _Sample_DTP_TEST
-    {
-        public override void Start()
-        {
-            a = new PacketHandler(sender, listener);
-            Console.WriteLine(a.DTP_GetCardInfo().ToString());
-        }
-    }
+    //    public class _Sample_DTP_DataReader : _Sample_DTP_TEST
+    //    {
+    //        public override void Start()
+    //        {
+    //            a = new PacketHandler(sender, listener);
 
-    public class _Sample_DTP_FileInfo : _Sample_DTP_TEST
-    {
-        public override void Start()
-        {
-            a = new PacketHandler(sender, listener);
-            Console.WriteLine(a.DTP_GetFileInfo("Tools.md5").ToString());
-        }
-    }
+    //            var openFile = a.File_Open("/asd.md5", false);
 
-    public class _Sample_DTP_WriteToFile : _Sample_DTP_TEST
-    {
+    //            if (openFile != PacketHandler.WriteReadFileHandleResult.OK)
+    //            {
+    //                Console.WriteLine(openFile.ToString());
+    //                return;
+    //            }
 
-        private DateTime startTime;
+    //            int len = 0;
 
-        private long totalBytes;
+    //            if(!a.File_GetLength(out len)) Console.WriteLine("cant get length");
 
-        private string DirName = "c:\\Tools";
+    //            Console.WriteLine(len);
 
-        private FileSender fileSender;
+    //            int packetLen = 2000;
 
-        private int PacketSize = 3200;
+    //            if (len <= packetLen)
+    //            {
+    //                var readData = a.File_Read(0, len);
+    //                if (readData.Status != PacketHandler.WriteReadFileHandleResult.OK)
+    //                {
+    //                    Console.WriteLine(readData.ToString());
+    //                    return;
+    //                }
+    //                Console.Write(string.Join("", readData.Result.Select(p => (char)p)));
+    //            }
+    //            else
+    //            {
+    //                int i = 0;
+    //                byte[] totalBuff = new byte[len];
+    //                int readedBytes = 0;
+    //                while (true)
+    //                {
+    //                    i++;
+    //                    byte[] buffer = new byte[0];
+    //                    int maxCount = 10;
 
-        private int _prcounter, _countOfPrData, _lProgress, _oneSProgress;
+    //                    bool succsess = false;
 
-        private long total;
+    //                    while (!succsess)
+    //                    {
+    //                        try
+    //                        {
+    //                            Console.WriteLine(readedBytes);
+    //                           // var readData = a.DTP_GetBytesOfFile(out buffer, readedBytes, packetLen);
+    //                          //  if (readData != PacketHandler.WriteReadFileHandleResult.OK)
+    //                         //   {
+    //                         //       Console.WriteLine(readData.ToString());
+    //                        //        throw new Exception();
+    //                        //    }
+    //                            succsess = true;
+    //                        }
+    //                        catch (WrongPacketInputException e)
+    //                        {
+    //                            Console.Write("Error: ");
+    //                            Console.WriteLine(e.Type);
+    //                            a.Listener.PacketReader.Reset();
+    //                            Console.WriteLine("Tryes: " + maxCount--.ToString());
 
-        private bool _end = false;
+    //                        }
+    //                        catch(Exception e)
+    //                        {
+    //                            Console.Write("Unknown error: ");
+    //                            Console.WriteLine(e.Message);
+    //                            a.Listener.PacketReader.Reset();
+    //                            Console.WriteLine("Tryes: " + maxCount--.ToString());
 
-        private double Speed, lSpeed;
+    //                        }
 
-        private double _left, _lastpr;
+    //                        if(maxCount == 0)
+    //                        {
+    //                            Console.WriteLine("ERROR. Out of tries");
+    //                            return;
+    //                        }
+    //                    }
+    //                    //Console.WriteLine(i);
+    //                    Console.WriteLine($"[{(double)readedBytes / len * 100 :0.#}]Packet#{i}/{len / packetLen}. Packet Len: {buffer.Length}.");
+    //                    Buffer.BlockCopy(buffer, 0, totalBuff, readedBytes, buffer.Length);
+    //                    readedBytes += buffer.Length;
+    //                    //buffer = null;
+    //                }
+    //                Console.WriteLine(readedBytes);
+    //                File.WriteAllBytes("dp.zip", totalBuff);
 
-        public override void Start()
-        {
-            startTime = DateTime.Now;
 
-            new Thread(timer).Start();
+    //            }
 
-            Console.WriteLine("Starting: " + startTime);
-            a = new PacketHandler(sender, listener);
-            fileSender = new FileSender(a);
-            fileSender.CheckSum = false;
-            fileSender.SendingProcessChanged += FileSender_SendingProcessChanged;
-            fileSender.SendingError += FileSender_SendingError;
-            fileSender.SendingEnd += FileSender_SendingEnd;
-            totalBytes = new FileInfo("diablopatch_20140908.zip").Length;
-            fileSender.SendFile("diablopatch_20140908.zip", "dp.zip");
+    //        }
+    ///*
+    //        public bool tryRead()
+    //        {
+    //            try
+    //            {
+    //                var readData = a.DTP_GetBytesOfFile(out buffer, readedBytes, packetLen);
+    //                if (readData != PacketHandler.WriteReadFileHandleResult.OK)
+    //                {
+    //                    Console.WriteLine(readData.ToString());
+    //                    throw new Exception();
+    //                }
 
-            //SendDir(DirName, "");
-            //Console.WriteLine("END!");
-            //Console.WriteLine("Bytes sent: " + totalBytes);
-            //Console.WriteLine((startTime - DateTime.Now).TotalSeconds);
-            
-        }
+    //            }
+    //            catch
+    //            {
 
-        private void timer()
-        {
-            while (!_end)
-            {
-                _oneSProgress = _prcounter - _lProgress;
-                _lProgress = _prcounter;
-                _countOfPrData += _oneSProgress;
-                if(lSpeed == 0) Speed = (double)_oneSProgress * PacketSize / 1024 * 2;
-                else Speed = (lSpeed + (double)_oneSProgress * PacketSize / 1024 * 2) / 2;
-                lSpeed = Speed;
-                if (_lastpr == 0 || _lastpr == float.PositiveInfinity)
-                {
-                    if (_oneSProgress == 0) _left = float.PositiveInfinity;
-                    else _left = (total - _countOfPrData) / _oneSProgress / 2;
-                }
-                else
-                {
-                    if (_oneSProgress == 0) _left = float.PositiveInfinity;
-                    else _left = (_lastpr + (total - _countOfPrData) / _oneSProgress / 2) / 2;
-                }
-                _lastpr = _left;
-                Thread.Sleep(500);
-            }
-        }
+    //            }
+    //        }*/
+    //    }
 
-        public void SendDir(string dirname, string DirPrefix)
-        {
-            var di = new DirectoryInfo(DirPrefix  + (DirPrefix == ""? "": "\\")  + dirname);
-            if (a.DTP_CreateDirectory((DirPrefix + (DirPrefix == "" ? "" : "\\") + di.Name).Replace('\\', '/'), true) != PacketHandler.FileDirHandleResult.OK) ;
-            foreach (var c in di.GetFiles())
-            {
-                Console.Write("[" +DateTime.Now + "]: " +  DirPrefix + (DirPrefix == "" ? "" : "\\") + di.Name + "\\" + c.Name + "||| ");
-                SendFile(DirPrefix + (DirPrefix == "" ? "" : "\\") + di.Name + "\\" + c.Name);
-            }
-            foreach(var c in di.GetDirectories())
-            {
-                SendDir(c.Name, DirPrefix + "\\" + di.Name);
-            }
-        }
+    //    public class _Sample_DTP_DateTime : _Sample_DTP_TEST
+    //    {
+    //        public override void Start()
+    //        {
+    //            a = new PacketHandler(sender, listener);
+    //            //GetDate();
 
-        public void SendFile(string filename)
-        {
-            var result = fileSender.SendFile("C:\\" + filename, filename.Replace('\\','/'));
-            totalBytes += new FileInfo("C:\\" + filename).Length;
-        }
+    //            var openFileRes = a.File_Open("Tools.md5", false);
 
-        private void FileSender_SendingEnd(FileSender.EndArgs arg)
-        {
-            _end = true;
-            Console.WriteLine("Done in {0}! Speed {1:0.##} KBytes/s", arg.TimeSpend, totalBytes / arg.TimeSpend / 1024);
-        }
+    //            if(openFileRes != PacketHandler.WriteReadFileHandleResult.OK)
+    //            {
+    //                Console.WriteLine(openFileRes.ToString());
+    //                return;
+    //            }
 
-        private void FileSender_SendingError(FileSender.ErrorArgs arg)
-        {
-            Console.Write("ERROR! Code {0}, IsCritical {1}", arg.Error.ToString(), arg.IsCritical);
-        }
+    //            var res = a.File_GetCrC16(PacketHandler.HashAlgorithm.CRC32);
 
-        private void FileSender_SendingProcessChanged(FileSender.ProcessArgs arg)
-        {
-            _prcounter = (int)arg.PacketSended;
-            total = arg.PacketSended + arg.PacketsLeft;
-            Console.WriteLine("[{2:0}%]. Packet#{0}/{1}. Time Left: {3:0.####} sec. Speed: {4:0.####}KBytes", arg.PacketSended, total, (double)arg.PacketSended / total * 100, _left, Speed);
-            //Console.Write("+");
-        }
-    }
+    //            if(res.Status != PacketHandler.WriteReadFileHandleResult.OK)
+    //            {
+    //                Console.WriteLine(res.Status.ToString());
+    //                if (res.Status == PacketHandler.WriteReadFileHandleResult.CantReadData) Console.WriteLine(res.ErrorByteIndex);
+    //                return;
+    //            } else
+    //            {
+    //                Console.WriteLine("Ok");
+    //                Console.WriteLine(string.Join(",",res.Result));
+    //            }
+    //            if (!a.File_Close())
+    //            {
+    //                Console.WriteLine("Cant close file");
+    //                return;
+    //            }
+    //        }
 
-    public class _Sample_DTP_DeleteCteateFiles : _Sample_DTP_TEST
-    {
-        public override void Start()
-        {
-            a = new PacketHandler(sender, listener);
-            //DeleteFiles();
-            CreateFiles();
-        }
+    //        private void GetDate()
+    //        {
+    //            for (int i = 0; i <= 5; i++) 
+    //            {
+    //                DateTime dt;
+    //                if (!a.Device_GetTime(out dt)) Console.WriteLine("Cant get datetime");
+    //                Console.WriteLine(dt.ToString());
+    //                Thread.Sleep(1000);
+    //            }
 
-        private string[] FileNames = { "LongName123as.txt", "ds.longExtention", "vc.lon", "sx.das", "Fotos/LongName123as323.d" };
+    //        }
+    //    }
 
-        private void DeleteFiles()
-        {
-            foreach (var b in FileNames)
-            {
-                var res = a.DTP_DeleteFile(b);
-                if (res == PacketHandler.FileDirHandleResult.OK) Console.WriteLine($"Succsessfully deleted \"{b}\"");
-                else if (res == PacketHandler.FileDirHandleResult.Fail) Console.WriteLine($"Сan`t delete \"{b}\"");
-                else Console.WriteLine($"File \"{b}\" not exists");
-            }
-        }
+    //    public class _Sample_DTP_CardInfo : _Sample_DTP_TEST
+    //    {
+    //        public override void Start()
+    //        {
+    //            a = new PacketHandler(sender, listener);
+    //            Console.WriteLine(a.Device_GetCardInfo().ToString());
+    //        }
+    //    }
 
-        private void CreateFiles()
-        {
-            foreach(var b in FileNames)
-            {
-                var res = a.DTP_CreateFile(b);
-                if(res == PacketHandler.FileDirHandleResult.OK) Console.WriteLine($"Succsessfully created \"{b}\"");
-                else if(res == PacketHandler.FileDirHandleResult.Fail) Console.WriteLine($"Cant create \"{b}\"");
-                else Console.WriteLine($"Cant create \"{b}\", File just exists");
-            }
-        }
-    }
+    //    public class _Sample_DTP_FileInfo : _Sample_DTP_TEST
+    //    {
+    //        public override void Start()
+    //        {
+    //            a = new PacketHandler(sender, listener);
+    //            Console.WriteLine(a.File_GetInfo("Tools.md5").ToString());
+    //        }
+    //    }
 
-    public class _Sample_DTP_Directories : _Sample_DTP_TEST
-    {
-        public string[] names = { "dir41", "dir221", "lolname", "wtasd", "dir1/dir2", "dir1/dir23", "dir2/dir22"};
+    //    //public class _Sample_DTP_WriteToFile : _Sample_DTP_TEST
+    //    //{
 
-        public override void Start()
-        {
-            a = new PacketHandler(sender, listener);
-            CreateDirs();
-        }
+    //    //    private DateTime startTime;
 
-        private void CreateDirs()
-        {
-            foreach(var b in names)
-            {
-                var status = a.DTP_DeleteDirectory(b, false);
+    //    //    private long totalBytes;
 
-                if(status == 0) Console.WriteLine("\"{0}\" was successfully created", b);
-                else if(status == PacketHandler.FileDirHandleResult.Fail) Console.WriteLine("Can`t create directory \"{0}\"", b);
-                else if(status == PacketHandler.FileDirHandleResult.FileOrDirJustExist) Console.WriteLine("\"{0}\" already exists", b);
+    //    //    private string DirName = "c:\\Tools";
 
-            }
-        }
-    }
+    //    //    private FileSender fileSender;
 
-    /*
-    public  class _Sample_DTP_FileTree : _Sample_DTP_TEST
-    {
-        Directory root = new Directory() { Name = "root" };
+    //    //    private int PacketSize = 3200;
 
-        public override void Start()
-        {
-            a = new PacketHandler(sender, listener);
-            RecRealTime("/", "", true);
+    //    //    private int _prcounter, _countOfPrData, _lProgress, _oneSProgress;
 
-            // Get tree nodes 
-            //root = RecNode("/");
-            //root.PrintPretty("", true);
+    //    //    private long total;
 
-        }
+    //    //    private bool _end = false;
 
-        private void RecRealTime(string dirName, string indent, bool last)
-        {
-            List<string> result_files = new List<string>();
-            List<string> result_dirs = new List<string>();
-            if (!a.DTP_GetDirectoriesAndFiles(dirName, out result_dirs, out result_files)) Console.WriteLine("Cant get files");
-            Console.Write(indent);
-            if (last)
-            {
-                Console.Write("└─");
-                indent += "  ";
-            }
-            else
-            {
-                Console.Write("├─");
-                indent += "│  ";
-            }
-            var jj = dirName.Split('/');
-            Console.WriteLine('[' + jj.Last() + ']');
-            for (int i = 0; i < result_files.Count; i++)
-            {
-                if (result_dirs.Count == 0 && i == result_files.Count - 1) Console.WriteLine(indent + "└─" + result_files[i]);
-                else Console.WriteLine(indent + "├─" + result_files[i]);
-            }
-            for (int i = 0; i < result_dirs.Count; i++) RecRealTime(dirName + '/' + result_dirs[i], indent, i == result_dirs.Count - 1);
-        }
+    //    //    private double Speed, lSpeed;
 
-        public class Directory
-        {
-            public string Name;
-            public List<Directory> Dirs;
-            public List<string> Files;
+    //    //    private double _left, _lastpr;
 
-            public void PrintPretty(string indent, bool last)
-            {
-                Console.Write(indent);
-                if (last)
-                {
-                    Console.Write("└─");
-                    indent += "  ";
-                }
-                else
-                {
-                    Console.Write("├─");
-                    indent += "│  ";
-                }
-                var jj = Name.Split('/');
-                Console.WriteLine('[' + jj.Last() + ']');
-                for (int i = 0; i < Files.Count; i++)
-                {
-                    if (Dirs.Count == 0 && i == Files.Count - 1) Console.WriteLine(indent + "└─" + Files[i]);
-                    else Console.WriteLine(indent + "├─" + Files[i]);
-                }
-                for (int i = 0; i < Dirs.Count; i++) Dirs[i].PrintPretty(indent, i == Dirs.Count - 1);
-            }
-        }
+    //    //    public override void Start()
+    //    //    {
+    //    //        startTime = DateTime.Now;
 
-        private Directory RecNode(string dirName)
-        {
-            Directory result = new Directory();
-            List<string> result_files = new List<string>();
-            List<string> result_dirs = new List<string>();
-            if (!a.DTP_GetDirectoriesAndFiles(dirName, out result_files, out result_dirs)) Console.WriteLine("Cant get files");
-            result.Name = dirName == "/" ? "root" : dirName;
-            result.Files = new List<string>();
-            result.Dirs = new List<Directory>();
-            foreach (var a in result_dirs)
-            {
-                result.Dirs.Add(new Directory());
-                result.Dirs[result.Dirs.Count - 1] = RecNode(dirName + '/' + a);
-            }
-            result.Files.AddRange(result_files);
-            return result;
-        }
-    }
-    */
-    public class _Sample_DTP_Info : _Sample_DTP_TEST
-    {
-        public override void Start()
-        {
-            a = new PacketHandler(sender, listener);
+    //    //        new Thread(timer).Start();
 
-            //Console.WriteLine(a.DTP_GetInfo().ToString());
-        }
-    }
+    //    //        Console.WriteLine("Starting: " + startTime);
+    //    //        a = new PacketHandler(sender, listener);
+    //    //        fileSender = new FileSender(a);
+    //    //        fileSender.CheckSum = false;
+    //    //        fileSender.SendingProcessChanged += FileSender_SendingProcessChanged;
+    //    //        fileSender.SendingError += FileSender_SendingError;
+    //    //        fileSender.SendingEnd += FileSender_SendingEnd;
+    //    //        totalBytes = new FileInfo("diablopatch_20140908.zip").Length;
+    //    //        fileSender.SendFile("diablopatch_20140908.zip", "dp.zip");
+
+    //    //        //SendDir(DirName, "");
+    //    //        //Console.WriteLine("END!");
+    //    //        //Console.WriteLine("Bytes sent: " + totalBytes);
+    //    //        //Console.WriteLine((startTime - DateTime.Now).TotalSeconds);
+
+    //    //    }
+
+    //    //    private void timer()
+    //    //    {
+    //    //        while (!_end)
+    //    //        {
+    //    //            _oneSProgress = _prcounter - _lProgress;
+    //    //            _lProgress = _prcounter;
+    //    //            _countOfPrData += _oneSProgress;
+    //    //            if(lSpeed == 0) Speed = (double)_oneSProgress * PacketSize / 1024 * 2;
+    //    //            else Speed = (lSpeed + (double)_oneSProgress * PacketSize / 1024 * 2) / 2;
+    //    //            lSpeed = Speed;
+    //    //            if (_lastpr == 0 || _lastpr == float.PositiveInfinity)
+    //    //            {
+    //    //                if (_oneSProgress == 0) _left = float.PositiveInfinity;
+    //    //                else _left = (total - _countOfPrData) / _oneSProgress / 2;
+    //    //            }
+    //    //            else
+    //    //            {
+    //    //                if (_oneSProgress == 0) _left = float.PositiveInfinity;
+    //    //                else _left = (_lastpr + (total - _countOfPrData) / _oneSProgress / 2) / 2;
+    //    //            }
+    //    //            _lastpr = _left;
+    //    //            Thread.Sleep(500);
+    //    //        }
+    //    //    }
+
+    //    //    public void SendDir(string dirname, string DirPrefix)
+    //    //    {
+    //    //        var di = new DirectoryInfo(DirPrefix  + (DirPrefix == ""? "": "\\")  + dirname);
+    //    //        if (a.DTP_CreateDirectory((DirPrefix + (DirPrefix == "" ? "" : "\\") + di.Name).Replace('\\', '/'), true) != PacketHandler.FileDirHandleResult.OK) ;
+    //    //        foreach (var c in di.GetFiles())
+    //    //        {
+    //    //            Console.Write("[" +DateTime.Now + "]: " +  DirPrefix + (DirPrefix == "" ? "" : "\\") + di.Name + "\\" + c.Name + "||| ");
+    //    //            SendFile(DirPrefix + (DirPrefix == "" ? "" : "\\") + di.Name + "\\" + c.Name);
+    //    //        }
+    //    //        foreach(var c in di.GetDirectories())
+    //    //        {
+    //    //            SendDir(c.Name, DirPrefix + "\\" + di.Name);
+    //    //        }
+    //    //    }
+
+    //    //    public void SendFile(string filename)
+    //    //    {
+    //    //        var result = fileSender.SendFile("C:\\" + filename, filename.Replace('\\','/'));
+    //    //        totalBytes += new FileInfo("C:\\" + filename).Length;
+    //    //    }
+
+    //    //    private void FileSender_SendingEnd(FileSender.EndArgs arg)
+    //    //    {
+    //    //        _end = true;
+    //    //        Console.WriteLine("Done in {0}! Speed {1:0.##} KBytes/s", arg.TimeSpend, totalBytes / arg.TimeSpend / 1024);
+    //    //    }
+
+    //    //    private void FileSender_SendingError(FileSender.ErrorArgs arg)
+    //    //    {
+    //    //        Console.Write("ERROR! Code {0}, IsCritical {1}", arg.Error.ToString(), arg.IsCritical);
+    //    //    }
+
+    //    //    private void FileSender_SendingProcessChanged(FileSender.ProcessArgs arg)
+    //    //    {
+    //    //        _prcounter = (int)arg.PacketSended;
+    //    //        total = arg.PacketSended + arg.PacketsLeft;
+    //    //        Console.WriteLine("[{2:0}%]. Packet#{0}/{1}. Time Left: {3:0.####} sec. Speed: {4:0.####}KBytes", arg.PacketSended, total, (double)arg.PacketSended / total * 100, _left, Speed);
+    //    //        //Console.Write("+");
+    //    //    }
+    //    //}
+
+    //    public class _Sample_DTP_DeleteCteateFiles : _Sample_DTP_TEST
+    //    {
+    //        public override void Start()
+    //        {
+    //            a = new PacketHandler(sender, listener);
+    //            //DeleteFiles();
+    //            CreateFiles();
+    //        }
+
+    //        private string[] FileNames = { "LongName123as.txt", "ds.longExtention", "vc.lon", "sx.das", "Fotos/LongName123as323.d" };
+
+    //        private void DeleteFiles()
+    //        {
+    //            foreach (var b in FileNames)
+    //            {
+    //                var res = a.File_Delete(b);
+    //                if (res == PacketHandler.FileDirHandleResult.OK) Console.WriteLine($"Succsessfully deleted \"{b}\"");
+    //                else if (res == PacketHandler.FileDirHandleResult.Fail) Console.WriteLine($"Сan`t delete \"{b}\"");
+    //                else Console.WriteLine($"File \"{b}\" not exists");
+    //            }
+    //        }
+
+    //        private void CreateFiles()
+    //        {
+    //            foreach(var b in FileNames)
+    //            {
+    //                var res = a.File_Create(b);
+    //                if(res == PacketHandler.FileDirHandleResult.OK) Console.WriteLine($"Succsessfully created \"{b}\"");
+    //                else if(res == PacketHandler.FileDirHandleResult.Fail) Console.WriteLine($"Cant create \"{b}\"");
+    //                else Console.WriteLine($"Cant create \"{b}\", File just exists");
+    //            }
+    //        }
+    //    }
+
+    //    public class _Sample_DTP_Directories : _Sample_DTP_TEST
+    //    {
+    //        public string[] names = { "dir41", "dir221", "lolname", "wtasd", "dir1/dir2", "dir1/dir23", "dir2/dir22"};
+
+    //        public override void Start()
+    //        {
+    //            a = new PacketHandler(sender, listener);
+    //            CreateDirs();
+    //        }
+
+    //        private void CreateDirs()
+    //        {
+    //            foreach(var b in names)
+    //            {
+    //                var status = a.Dir_Delete(b, false);
+
+    //                if(status == 0) Console.WriteLine("\"{0}\" was successfully created", b);
+    //                else if(status == PacketHandler.FileDirHandleResult.Fail) Console.WriteLine("Can`t create directory \"{0}\"", b);
+    //                else if(status == PacketHandler.FileDirHandleResult.FileOrDirJustExist) Console.WriteLine("\"{0}\" already exists", b);
+
+    //            }
+    //        }
+    //    }
+
+    //    /*
+    //    public  class _Sample_DTP_FileTree : _Sample_DTP_TEST
+    //    {
+    //        Directory root = new Directory() { Name = "root" };
+
+    //        public override void Start()
+    //        {
+    //            a = new PacketHandler(sender, listener);
+    //            RecRealTime("/", "", true);
+
+    //            // Get tree nodes 
+    //            //root = RecNode("/");
+    //            //root.PrintPretty("", true);
+
+    //        }
+
+    //        private void RecRealTime(string dirName, string indent, bool last)
+    //        {
+    //            List<string> result_files = new List<string>();
+    //            List<string> result_dirs = new List<string>();
+    //            if (!a.DTP_GetDirectoriesAndFiles(dirName, out result_dirs, out result_files)) Console.WriteLine("Cant get files");
+    //            Console.Write(indent);
+    //            if (last)
+    //            {
+    //                Console.Write("└─");
+    //                indent += "  ";
+    //            }
+    //            else
+    //            {
+    //                Console.Write("├─");
+    //                indent += "│  ";
+    //            }
+    //            var jj = dirName.Split('/');
+    //            Console.WriteLine('[' + jj.Last() + ']');
+    //            for (int i = 0; i < result_files.Count; i++)
+    //            {
+    //                if (result_dirs.Count == 0 && i == result_files.Count - 1) Console.WriteLine(indent + "└─" + result_files[i]);
+    //                else Console.WriteLine(indent + "├─" + result_files[i]);
+    //            }
+    //            for (int i = 0; i < result_dirs.Count; i++) RecRealTime(dirName + '/' + result_dirs[i], indent, i == result_dirs.Count - 1);
+    //        }
+
+    //        public class Directory
+    //        {
+    //            public string Name;
+    //            public List<Directory> Dirs;
+    //            public List<string> Files;
+
+    //            public void PrintPretty(string indent, bool last)
+    //            {
+    //                Console.Write(indent);
+    //                if (last)
+    //                {
+    //                    Console.Write("└─");
+    //                    indent += "  ";
+    //                }
+    //                else
+    //                {
+    //                    Console.Write("├─");
+    //                    indent += "│  ";
+    //                }
+    //                var jj = Name.Split('/');
+    //                Console.WriteLine('[' + jj.Last() + ']');
+    //                for (int i = 0; i < Files.Count; i++)
+    //                {
+    //                    if (Dirs.Count == 0 && i == Files.Count - 1) Console.WriteLine(indent + "└─" + Files[i]);
+    //                    else Console.WriteLine(indent + "├─" + Files[i]);
+    //                }
+    //                for (int i = 0; i < Dirs.Count; i++) Dirs[i].PrintPretty(indent, i == Dirs.Count - 1);
+    //            }
+    //        }
+
+    //        private Directory RecNode(string dirName)
+    //        {
+    //            Directory result = new Directory();
+    //            List<string> result_files = new List<string>();
+    //            List<string> result_dirs = new List<string>();
+    //            if (!a.DTP_GetDirectoriesAndFiles(dirName, out result_files, out result_dirs)) Console.WriteLine("Cant get files");
+    //            result.Name = dirName == "/" ? "root" : dirName;
+    //            result.Files = new List<string>();
+    //            result.Dirs = new List<Directory>();
+    //            foreach (var a in result_dirs)
+    //            {
+    //                result.Dirs.Add(new Directory());
+    //                result.Dirs[result.Dirs.Count - 1] = RecNode(dirName + '/' + a);
+    //            }
+    //            result.Files.AddRange(result_files);
+    //            return result;
+    //        }
+    //    }
+    //    */
+
+    //    public class _Sample_DTP_Info : _Sample_DTP_TEST
+    //    {
+    //        public override void Start()
+    //        {
+    //            a = new PacketHandler(sender, listener);
+
+    //            //Console.WriteLine(a.DTP_GetInfo().ToString());
+    //        }
+    //    }
 }

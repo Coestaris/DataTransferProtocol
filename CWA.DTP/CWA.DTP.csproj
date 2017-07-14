@@ -41,8 +41,23 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Core.cs" />
-    <Compile Include="Handler.cs" />
+    <Compile Include="Core\CantInitException.cs" />
+    <Compile Include="Core\CommandType.cs" />
+    <Compile Include="Core\EnumsAndInterface.cs" />
+    <Compile Include="Core\CrCHandler.cs" />
+    <Compile Include="Core\HelpMethods.cs" />
+    <Compile Include="Core\Packet.cs" />
+    <Compile Include="Core\PacketAnswer.cs" />
+    <Compile Include="Core\PacketListener.cs" />
+    <Compile Include="Core\Sender.cs" />
+    <Compile Include="Core\SerialPacketReader.cs" />
+    <Compile Include="Core\SerialPacketWriter.cs" />
+    <Compile Include="Core\WrongPacketInputException.cs" />
+    <Compile Include="Handlers\File.cs" />
+    <Compile Include="Handlers\ExtentionMethod.cs" />
+    <Compile Include="Handlers\FileSender.cs" />
+    <Compile Include="Handlers\Enums.cs" />
+    <Compile Include="Handlers\PacketHandler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

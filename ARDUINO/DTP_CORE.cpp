@@ -42,12 +42,12 @@ byte* ComputeChecksumBytes(const byte* data_p, int length) {
 	byte* a = SplitNumber(ComputeChecksum(data_p, length));
 #else
 	//byte* a = SplitNumber(CRC16Handler.ccitt(data_p, length));
+	//return SplitNumber(CRC16Handler.ccitt(data_p, length));
 #endif
-	//int a1 = a[0];
-	//int b1 = a[1];
-	//delete[] a;
-	//return new byte[2]{ a1 , b1 };
-	return SplitNumber(CRC16Handler.ccitt(data_p, length));
+	int a1 = a[0];
+	int b1 = a[1];
+	delete[] a;
+	return new byte[2]{ a1 , b1 };
 }
 
 int FreeMemory() {
@@ -122,7 +122,7 @@ void dateTime(uint16_t* date, uint16_t* time) {
 #ifdef PacketFileDebug
 int packetCount = 0;
 void Read() {
-	File file = SD.open("log"+String(packetCount )+".txt", FILE_WRITE );
+	File file = SD.open("log"+String(packetCount)+".txt", FILE_WRITE );
 	packetCount++;
 	file.println("packet: " + String(packetCount));
 	Wait();
@@ -190,13 +190,14 @@ void Read() {
 	byte b = Serial.read();
 	int len = GetNumber(a, b) - 255;
 	byte* buffer = new byte[len];
-	/*for (int i = 0; i <= len - 3; i++)
+	
+	for (int i = 0; i <= len - 3; i++)
 	{
 		Wait();
 		buffer[i + 2] = Serial.read();
-	};*/
+	};
 
-	Serial.readBytes(buffer + 2, len - 2);
+	//Serial.readBytes(buffer + 2, len - 2);
 
 	int command = (int)GetNumber(buffer[2], buffer[3]);
 	int dataLen = len - 14;

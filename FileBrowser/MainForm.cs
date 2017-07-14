@@ -91,7 +91,7 @@ namespace FileBrowser
             string Path = string.Join("", CurrentPath);
             label_path.Text = "Device:\\" + Path.Replace('/', '\\');
             listView1.Items.Clear();
-            var result = ph.DTP_GetDirectoriesAndFiles(Path);
+            var result = ph.Dir_GetFilesAndSubDirs(Path);
             if (result.Status != PacketHandler.FileDirHandleResult.OK)
             {
                 System.Windows.Forms.MessageBox.Show("Cant get root");
@@ -100,7 +100,7 @@ namespace FileBrowser
             if (Path != "/") listView1.Items.Add(new ListViewItem(new string[] { "...", "", "", "" }, result.ResultFiles.Count + 1));
             foreach (var a in result.ResultDirs)
             {
-                var res = ph.DTP_GetFileInfo(Path == "/" ? a : Path + '/' + a);
+                var res = ph.File_GetInfo(Path == "/" ? a : Path + '/' + a);
                 ListViewItem item = new ListViewItem(new string[] { '[' + a + ']', "<folder>", res.CreationTime.ToString(), "____" }, result.ResultFiles.Count);
                 listView1.Items.Add(item);
             }
@@ -109,7 +109,7 @@ namespace FileBrowser
             foreach (var a in result.ResultFiles)
             {
                 il.Images.Add(IconManager.FindIconForFilename(a, false));
-                var res = ph.DTP_GetFileInfo(Path == "/" ? a : Path + '/' + a);
+                var res = ph.File_GetInfo(Path == "/" ? a : Path + '/' + a);
                 ListViewItem item = new ListViewItem(new string[] { a, ProccedSize(res.FileSize), res.CreationTime.ToString(), "____" }, il.Images.Count - 1);
                 listView1.Items.Add(item);
             }
@@ -145,6 +145,7 @@ namespace FileBrowser
             MainForm_SizeChanged(null, null);
             try
             {
+                port?.Close();
                 port = new SerialPort(portName, 115200);
                 ph = new PacketHandler(Sender, new PacketListener(new SerialPacketReader(port, 4000), new SerialPacketWriter(port)));
             } catch (Exception ex)

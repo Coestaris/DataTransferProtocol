@@ -171,6 +171,7 @@ enum class DTP_COMMANDTYPE : uint16_t
 	GetInfo = 0x11b, //+
 	File_Open = 0x11c, //+
 	File_Close = 0x11d, //+
+	File_Exists = 0x11e, //+
 };
 
 enum class DTP_ANSWER_STATUS
