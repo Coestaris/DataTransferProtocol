@@ -22,12 +22,12 @@
     THE SOFTWARE.
 
 */
-using System;
 
-namespace CWA.DTP
+namespace CWA.DTP.FileTransfer
 {
-    public class CantInitException : Exception
-    {
-        //TODO CantInitException
-    }
+    public delegate void FileTrasferProcessHandler(FileTransferProcessArgs arg);
+
+    public delegate void FileTrasferEndHandler(FileTransferEndArgs arg);
+
+    public delegate void FileSenderErrorHandler(FileSenderErrorArgs arg);
 }

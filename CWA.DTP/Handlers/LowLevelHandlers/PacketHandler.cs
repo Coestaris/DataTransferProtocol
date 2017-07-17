@@ -30,7 +30,7 @@ using System.Text;
 
 namespace CWA.DTP
 {
-    public class PacketHandler
+    internal class PacketHandler
     {
         private static readonly byte[] EmptyData = { 1 };
 
@@ -44,10 +44,6 @@ namespace CWA.DTP
             return Listener.SendAndListenPacket(Packet.GetPacket(command, data, Sender));
         }
 
-        public static bool AutoSyncTime { get; set; } = true;
-
-        public static bool StartTest { get; set; } = true;
-
         public Sender Sender { get; set; }
 
         public PacketListener Listener { get; set; }
@@ -56,11 +52,6 @@ namespace CWA.DTP
         {
             Listener = listener;
             Sender = sender;
-            if (StartTest)
-            {
-                if (!DeviceTest()) throw new Exception("Cant init"); //TODO: Exception
-            }
-            if (AutoSyncTime) Device_SyncTime();
         }
 
         #region Classes
@@ -83,187 +74,116 @@ namespace CWA.DTP
                 return IsEmpty;
             }
         }
+      
 
         public class PacketAnswerTotalInfo : PacketAnswerSpecialData
         {
-            public Board Board { get; private set; }
-            public BoardArchitecture BoardArchitecture { get; private set; }
-            public int StackFreeMemory { get; private set; }
-            public long CPU_F { get; private set; }
-            public int GCC_verison { get; private set; }
-            public int ARD_version { get; private set; }
-            public int DTP_version { get; private set; }
-            public bool IsConnectSDModule { get; private set; }
-            public bool IsConnectTimeModule { get; private set; }
-            public int FlashMemorySize { get; private set; }
-            public int SRAMMemorySize { get; private set; }
+            public DeviceInfo DI { get; }
 
-            public PacketAnswerTotalInfo(PacketAnswer answer)
+            internal PacketAnswerTotalInfo(PacketAnswer answer)
             {
                 if (!Init(CommandType.GetInfo, answer)) throw WrongTypeException;
-
-                Board = (Board)(answer.Data[0]);
-                BoardArchitecture = (BoardArchitecture)(answer.Data[1]);
-                StackFreeMemory = BitConverter.ToInt32(answer.Data, 2);
-                CPU_F = BitConverter.ToInt64(answer.Data, 6);
-                GCC_verison = BitConverter.ToInt32(answer.Data, 14);
-                ARD_version = BitConverter.ToInt32(answer.Data, 18);
-                DTP_version = BitConverter.ToInt32(answer.Data, 22);
-                IsConnectSDModule = answer.Data[26] == 1;
-                IsConnectTimeModule = answer.Data[27] == 1;
-                FlashMemorySize = BitConverter.ToInt32(answer.Data, 28);
-                SRAMMemorySize = BitConverter.ToInt32(answer.Data, 32);
+                DI = new DeviceInfo()
+                {
+                    Board = (Board)(answer.Data[0]),
+                    BoardArchitecture = (BoardArchitecture)(answer.Data[1]),
+                    StackFreeMemory = BitConverter.ToInt32(answer.Data, 2),
+                    CPU_F = BitConverter.ToInt64(answer.Data, 6),
+                    GCC_verison = BitConverter.ToInt32(answer.Data, 14),
+                    ARD_version = BitConverter.ToInt32(answer.Data, 18),
+                    DTP_version = BitConverter.ToInt32(answer.Data, 22),
+                    IsConnectSDModule = answer.Data[26] == 1,
+                    IsConnectTimeModule = answer.Data[27] == 1,
+                    FlashMemorySize = BitConverter.ToInt32(answer.Data, 28),
+                    SRAMMemorySize = BitConverter.ToInt32(answer.Data, 32)
+                };
             }
 
             public override string ToString()
             {
-                string res = "";
-                res += string.Format("Board: {0}\n", Board);
-                res += string.Format("BoardArchitecture: {0}\n", BoardArchitecture);
-                res += string.Format("StackFreeMemory: {0}\n", StackFreeMemory);
-                res += string.Format("FlashMemorySize: {0}\n", FlashMemorySize);
-                res += string.Format("SRAMMemorySize: {0}\n", SRAMMemorySize);
-                res += string.Format("CPU_F: {0}\n", CPU_F);
-                res += string.Format("GCC_verison: {0}\n", GCC_verison);
-                res += string.Format("ARD_version: {0}\n", ARD_version);
-                res += string.Format("DTP_version: {0}\n", DTP_version);
-                res += string.Format("isConnectSDModule: {0}\n", IsConnectSDModule);
-                res += string.Format("isConnectTimeModule: {0}\n", IsConnectTimeModule);
-                return res;
+                return DI.ToString();
             }
         }
-
+     
         public class PacketAnswerCardInfo : PacketAnswerSpecialData
         {
-            public int DataStartBlock { get; private set; }
-            public int RootDirStart { get; private set; }
-            public int BlocksPerFat { get; private set; }
-            public int FatCount { get; private set; }
-            public int FatStartBlock { get; private set; }
-            public int FreeSpace { get; private set; }
-            public int FreeClusters { get; private set; }
-            public int ClusterCount { get; private set; }
-            public byte BlocksPerCluster { get; private set; }
-            public SdCardFatType FatType { get; private set; }
-            public bool EraseSingleBlock { get; private set; }
-            public byte FlashEraseSize { get; private set; }
-            public int CardSize { get; private set; }
-            public CardType Type { get; private set; }
-            public byte ManufacturingDateMonth { get; private set; }
-            public short ManufacturingDateYear { get; private set; }
-            public int SerialNumber { get; private set; }
-            public byte MinorVersion { get; private set; }
-            public byte MajorVersion { get; private set; }
-            public byte[] ProductVersion { get; private set; }
-            public string OEMID { get; private set; }
-            public byte ManufacturerID { get; private set; }
+            public CardInfo CI { get; }
 
-            public PacketAnswerCardInfo(PacketAnswer answer)
+            internal PacketAnswerCardInfo(PacketAnswer answer)
             {
                 if (!Init(CommandType.GetSDInfo, answer)) throw WrongTypeException;
-                ManufacturerID = answer.Data[0];
-                OEMID = new string(new char[] { (char)answer.Data[1], (char)answer.Data[2] });
-                ProductVersion = new byte[5];
-                ProductVersion[0] = answer.Data[3];
-                ProductVersion[1] = answer.Data[4];
-                ProductVersion[2] = answer.Data[5];
-                ProductVersion[3] = answer.Data[6];
-                ProductVersion[4] = answer.Data[7];
-                MajorVersion = answer.Data[8];
-                MinorVersion = answer.Data[9];
-                SerialNumber = BitConverter.ToInt32(answer.Data, 10);
-                ManufacturingDateMonth = answer.Data[14];
-                ManufacturingDateYear = (short)(BitConverter.ToInt16(answer.Data, 15) + 2000);
-                CardSize = BitConverter.ToInt32(answer.Data, 17);
-                FlashEraseSize = answer.Data[21];
-                EraseSingleBlock = answer.Data[22] == 1;
-                FatType = (SdCardFatType)answer.Data[23];
-                BlocksPerCluster = answer.Data[24];
-                ClusterCount = BitConverter.ToInt32(answer.Data, 25);
-                FreeClusters = BitConverter.ToInt32(answer.Data, 29);
-                FreeSpace = BitConverter.ToInt32(answer.Data, 33);
-                FatStartBlock = BitConverter.ToInt32(answer.Data, 37);
-                FatCount = answer.Data[41];
-                BlocksPerFat = BitConverter.ToInt32(answer.Data, 42);
-                RootDirStart = BitConverter.ToInt32(answer.Data, 46);
-                DataStartBlock = BitConverter.ToInt32(answer.Data, 50);
-                Type = (CardType)answer.Data[54];
+                CI = new CardInfo()
+                {
+                    ManufacturerID = answer.Data[0],
+                    OEMID = new string(new char[] {
+                        (char)answer.Data[1],
+                        (char)answer.Data[2]
+                    }),
+                    ProductVersion = new byte[5] {
+                        answer.Data[3],
+                        answer.Data[4],
+                        answer.Data[5],
+                        answer.Data[6],
+                        answer.Data[7],
+                    },
+                    MajorVersion = answer.Data[8],
+                    MinorVersion = answer.Data[9],
+                    SerialNumber = BitConverter.ToInt32(answer.Data, 10),
+                    ManufacturingDateMonth = answer.Data[14],
+                    ManufacturingDateYear = (short)(BitConverter.ToInt16(answer.Data, 15) + 2000),
+                    CardSize = BitConverter.ToInt32(answer.Data, 17),
+                    FlashEraseSize = answer.Data[21],
+                    EraseSingleBlock = answer.Data[22] == 1,
+                    FatType = (SdCardFatType)answer.Data[23],
+                    BlocksPerCluster = answer.Data[24],
+                    ClusterCount = BitConverter.ToInt32(answer.Data, 25),
+                    FreeClusters = BitConverter.ToInt32(answer.Data, 29),
+                    FreeSpace = BitConverter.ToInt32(answer.Data, 33),
+                    FatStartBlock = BitConverter.ToInt32(answer.Data, 37),
+                    FatCount = answer.Data[41],
+                    BlocksPerFat = BitConverter.ToInt32(answer.Data, 42),
+                    RootDirStart = BitConverter.ToInt32(answer.Data, 46),
+                    DataStartBlock = BitConverter.ToInt32(answer.Data, 50),
+                    Type = (CardType)answer.Data[54],
+                };
             }
 
             public override string ToString()
             {
-                string res = "";
-
-                res += string.Format("SD Type: {0}.\n", Type);
-                res += string.Format("Manufacturer ID: 0x{0}.\n", ManufacturerID.ToString("X"));
-                res += string.Format("OEM ID: {0}.\n", OEMID);
-                res += string.Format("Product: {0}.\n", string.Join("", ProductVersion.Select(p => (char)p)));
-                res += string.Format("Version: {0}.{1}.\n", MajorVersion, MinorVersion);
-                res += string.Format("Serial number: 0x{0}.\n", SerialNumber.ToString("X"));
-                res += string.Format("Manufacturing date: {0}/{1}.\n", ManufacturingDateMonth, ManufacturingDateYear);
-                res += string.Format("CardSize: {0} MB.\n", CardSize);
-                res += string.Format("FlashEraseSize: {0}.\n", FlashEraseSize);
-                res += string.Format("EraseSingleBlock: {0}.\n", EraseSingleBlock);
-                res += string.Format("Volume is FAT{0}.\n", (int)FatType);
-                res += string.Format("BlocksPerCluster: {0}.\n", BlocksPerCluster);
-                res += string.Format("ClusterCount: {0}.\n", ClusterCount);
-                res += string.Format("FreeClusters: {0}.\n", FreeClusters);
-                res += string.Format("FreeSpace: {0} MB.\n", FreeSpace);
-                res += string.Format("FatStartBlock: {0}.\n", FatStartBlock);
-                res += string.Format("FatCount: {0}.\n", FatCount);
-                res += string.Format("BlocksPerFat: {0}.\n", BlocksPerFat);
-                res += string.Format("RootDirStart: {0}.\n", RootDirStart);
-                res += string.Format("DataStartBlock: {0}.\n", DataStartBlock);
-
-                return res;
+                return CI.ToString();
             }
         }
 
         public class PacketAnswerFileInfo : PacketAnswerSpecialData
         {
-            public int FileSize { get; private set; }
-            public DateTime CreationTime { get; private set; }
-            public bool IsHidden { get; private set; }
-            public bool IsLFN { get; private set; }
-            public bool IsReadOnly { get; private set; }
-            public bool IsSystem { get; private set; }
-            public string Name { get; private set; }
+            public SdCardDirectoryFileInfo FI { get; }
 
-            public PacketAnswerFileInfo(PacketAnswer answer, string name)
+            internal PacketAnswerFileInfo(PacketAnswer answer, string name)
             {
                 if (!Init(CommandType.File_GetFileInfo, answer)) throw WrongTypeException;
-
-                FileSize = BitConverter.ToInt32(answer.Data, 0);
-
-                CreationTime = new DateTime(
-                    HelpMethods.GetNumber(answer.Data[9], answer.Data[10]),
-                    answer.Data[8],
-                    answer.Data[7],
-                    answer.Data[4],
-                    answer.Data[5],
-                    answer.Data[6]
-                 );
-
-                IsHidden = answer.Data[11] == 1;
-                IsLFN = answer.Data[12] == 1;
-                IsReadOnly = answer.Data[13] == 1;
-                IsSystem = answer.Data[14] == 1;
-
-                Name = name;
+                FI = new SdCardDirectoryFileInfo()
+                {
+                    FileDirectorySize = BitConverter.ToInt32(answer.Data, 0),
+                    CreationTime = new DateTime(
+                        HelpMethods.GetNumber(answer.Data[9], answer.Data[10]),
+                        answer.Data[8],
+                        answer.Data[7],
+                        answer.Data[4],
+                        answer.Data[5],
+                        answer.Data[6]
+                    ),
+                    IsHidden = answer.Data[11] == 1,
+                    IsLFN = answer.Data[12] == 1,
+                    IsReadOnly = answer.Data[13] == 1,
+                    IsSystem = answer.Data[14] == 1,
+                    IsDirectory = answer.Data[15] == 1,
+                    Name = name
+                };
             }
 
             public override string ToString()
             {
-                string res = "";
-                res += string.Format("File: {0}\n", Name);
-                res += string.Format("Size: {0}\n", FileSize);
-                res += string.Format("CreationTime: {0}\n", CreationTime.ToString());
-                res += string.Format("IsHidden: {0}\n", IsHidden);
-                res += string.Format("IsLFN: {0}\n", IsLFN);
-                res += string.Format("IsReadOnly: {0}\n", IsReadOnly);
-                res += string.Format("IsSystem: {0}\n", IsSystem);
-
-                return res;
+                return FI.ToString();
             }
         }
 
@@ -305,12 +225,24 @@ namespace CWA.DTP
             public WriteReadFileHandleResult Status { get; internal set; } = WriteReadFileHandleResult.Fail;
             public byte[] Result { get; internal set; } = new byte[0];
             public int ErrorByteIndex { get; internal set; }
+
+            internal DataRequestResult() { }
         }
 
         public class FileLengthRequestResult
         {
             public FileDirHandleResult Status { get; internal set; } = FileDirHandleResult.Fail;
-            public long Length { get; internal set; } = 0;
+            public int Length { get; internal set; } = 0;
+
+            internal FileLengthRequestResult() { }
+        }
+
+        public class DateTimeRequestResult
+        {
+            public bool Success { get; internal set; } = false;
+            public DateTime Time { get; internal set; }
+
+            internal DateTimeRequestResult() { }
         }
 
         public class GetFilesOrDirsRequestResult
@@ -318,17 +250,19 @@ namespace CWA.DTP
             public FileDirHandleResult Status { get; internal set; } = FileDirHandleResult.Fail;
             public List<string> ResultFiles { get; internal set; } = new List<string>();
             public List<string> ResultDirs { get; internal set; } = new List<string>();
+
+            internal GetFilesOrDirsRequestResult() { }
         }
 
         #endregion
 
-        public bool DeviceTest()
+        public bool Device_Test()
         {
             var result = GetResult(CommandType.Test);
             return !result.IsEmpty;
         }
 
-        public bool DeviceDataTest(byte[] data)
+        public bool Device_DataTest(byte[] data)
         {
             var result = GetResult(CommandType.DataTest, data);
             return (!result.IsEmpty && result.Status == AnswerStatus.OK && result.Data.ToList().SequenceEqual(data));
@@ -336,16 +270,17 @@ namespace CWA.DTP
 
         public long Device_SyncTime()
         {
-            if (!Device_GetTime(out DateTime deviceTime)) //TODO чтото
-                return 0;
+            var res = Device_GetTime();
+            if(!res.Success) return -1;
+            DateTime deviceTime = res.Time;
             double diff = Math.Abs((DateTime.Now - deviceTime).TotalSeconds);
             if (diff > 20)
             {
                 if (!Device_SetTime(DateTime.Now))
-                    return 0;
+                    return -1;
                 return (long)diff;
             }
-            else return -1;
+            else return 0;
         }
 
         public FileDirHandleResult File_Create(string FileName)
@@ -622,12 +557,12 @@ namespace CWA.DTP
             return !result.IsEmpty;
         }
 
-        public bool Device_GetTime(out DateTime result_)
+        public DateTimeRequestResult Device_GetTime()
         {
-            result_ = new DateTime();
+            var res = new DateTime();
             var result = GetResult(CommandType.GetDateTime);
-            if (result.IsEmpty) return false;
-            result_ = new DateTime(
+            if (result.IsEmpty) return new DateTimeRequestResult();
+            res = new DateTime(
                     HelpMethods.GetNumber(result.Data[5], result.Data[6]),
                     result.Data[4],
                     result.Data[3],
@@ -635,7 +570,11 @@ namespace CWA.DTP
                     result.Data[1],
                     result.Data[2]
                  );
-            return true;
+            return new DateTimeRequestResult()
+            {
+                Success = true,
+                Time = res
+            };
         }
     }
 }

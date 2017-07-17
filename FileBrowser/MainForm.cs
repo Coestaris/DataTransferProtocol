@@ -22,13 +22,13 @@ namespace FileBrowser
         {
             InitializeComponent();
         }
-        private string portName = "COM4";
+        private string portName = "COM6";
         private Sender Sender = new Sender(SenderType.SevenByteName, "Coestar");
         private SerialPort port;
         private Bitmap folderImage = new Bitmap("folder.png");
         private Bitmap backImage = new Bitmap("back.png");
         private Bitmap forwardImage = new Bitmap("forward.png");
-        private PacketHandler ph;
+        private DTPMaster Master;
         private List<string> CurrentPath = new List<string>();
 
         public static float ParseSize(string size)
@@ -91,26 +91,22 @@ namespace FileBrowser
             string Path = string.Join("", CurrentPath);
             label_path.Text = "Device:\\" + Path.Replace('/', '\\');
             listView1.Items.Clear();
-            var result = ph.Dir_GetFilesAndSubDirs(Path);
-            if (result.Status != PacketHandler.FileDirHandleResult.OK)
+            var ResultFiles = Master.CreateDirectoryHandler(Path).SubFiles;
+            var ResultDirs = Master.CreateDirectoryHandler(Path).SubDirectroies;
+            if (Path != "/") listView1.Items.Add(new ListViewItem(new string[] { "...", "", "", "" }, ResultFiles.Length + 1));
+            foreach (var a in ResultDirs)
             {
-                System.Windows.Forms.MessageBox.Show("Cant get root");
-                return;
-            }
-            if (Path != "/") listView1.Items.Add(new ListViewItem(new string[] { "...", "", "", "" }, result.ResultFiles.Count + 1));
-            foreach (var a in result.ResultDirs)
-            {
-                var res = ph.File_GetInfo(Path == "/" ? a : Path + '/' + a);
-                ListViewItem item = new ListViewItem(new string[] { '[' + a + ']', "<folder>", res.CreationTime.ToString(), "____" }, result.ResultFiles.Count);
+                var res = Master.CreateDirectoryHandler(Path == "/" ? a.DirectoryPath : Path + '/' + a.DirectoryPath).DirectoryInfo;
+                ListViewItem item = new ListViewItem(new string[] { '[' + a.DirectoryPath + ']', "<folder>", res.CreationTime.ToString(), "____" }, ResultFiles.Length);
                 listView1.Items.Add(item);
             }
             ImageList il = new ImageList();
             listView1.SmallImageList?.Images.Clear();
-            foreach (var a in result.ResultFiles)
+            foreach (var a in ResultFiles)
             {
-                il.Images.Add(IconManager.FindIconForFilename(a, false));
-                var res = ph.File_GetInfo(Path == "/" ? a : Path + '/' + a);
-                ListViewItem item = new ListViewItem(new string[] { a, ProccedSize(res.FileSize), res.CreationTime.ToString(), "____" }, il.Images.Count - 1);
+                il.Images.Add(IconManager.FindIconForFilename(a.FilePath, false));
+                var res = Master.CreateFileHandler(Path == "/" ? a.FilePath : Path + '/' + a.FilePath).FileInfo;
+                ListViewItem item = new ListViewItem(new string[] { a.FilePath, ProccedSize(res.FileDirectorySize), res.CreationTime.ToString(), "____" }, il.Images.Count - 1);
                 listView1.Items.Add(item);
             }
             il.Images.Add(folderImage);
@@ -147,7 +143,7 @@ namespace FileBrowser
             {
                 port?.Close();
                 port = new SerialPort(portName, 115200);
-                ph = new PacketHandler(Sender, new PacketListener(new SerialPacketReader(port, 4000), new SerialPacketWriter(port)));
+                Master = new DTPMaster(new SerialPacketReader(port, 4000), new SerialPacketWriter(port));
             } catch (Exception ex)
             {
                 if (System.Windows.Forms.MessageBox.Show(
@@ -197,8 +193,8 @@ namespace FileBrowser
 
         private void button1_Click(object sender, EventArgs e)
         {
-            new SendDialog(ph, "CWADTP.pdb", "/CWADTP.pdb").ShowDialog();
-            TrySetupFolder();
+            //new SendDialog(ph, "CWADTP.pdb", "/CWADTP.pdb").ShowDialog();
+            //TrySetupFolder();
         }
 
         int lastColumn = 0;
