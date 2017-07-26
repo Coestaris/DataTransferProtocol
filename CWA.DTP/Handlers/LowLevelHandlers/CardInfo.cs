@@ -24,29 +24,30 @@
 */
 
 
+using System;
 using System.Linq;
 
 namespace CWA.DTP
 {
     public class CardInfo
     {
-        public int DataStartBlock { get; internal set; }
-        public int RootDirStart { get; internal set; }
-        public int BlocksPerFat { get; internal set; }
-        public int FatCount { get; internal set; }
-        public int FatStartBlock { get; internal set; }
-        public int FreeSpace { get; internal set; }
-        public int FreeClusters { get; internal set; }
-        public int ClusterCount { get; internal set; }
+        public UInt32 DataStartBlock { get; internal set; }
+        public UInt32 RootDirStart { get; internal set; }
+        public UInt32 BlocksPerFat { get; internal set; }
+        public UInt32 FatCount { get; internal set; }
+        public UInt32 FatStartBlock { get; internal set; }
+        public UInt32 FreeSpace { get; internal set; }
+        public UInt32 FreeClusters { get; internal set; }
+        public UInt32 ClusterCount { get; internal set; }
         public byte BlocksPerCluster { get; internal set; }
         public SdCardFatType FatType { get; internal set; }
         public bool EraseSingleBlock { get; internal set; }
         public byte FlashEraseSize { get; internal set; }
-        public int CardSize { get; internal set; }
+        public UInt32 CardSize { get; internal set; }
         public CardType Type { get; internal set; }
         public byte ManufacturingDateMonth { get; internal set; }
         public short ManufacturingDateYear { get; internal set; }
-        public int SerialNumber { get; internal set; }
+        public UInt32 SerialNumber { get; internal set; }
         public byte MinorVersion { get; internal set; }
         public byte MajorVersion { get; internal set; }
         public byte[] ProductVersion { get; internal set; }

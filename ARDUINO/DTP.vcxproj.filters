@@ -186,6 +186,12 @@
     <ClInclude Include="__vm\.ARDUINO.vsarduino.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Plotter_CORE.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Plotter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SDFAT\FatLib\FatFile.cpp">
@@ -261,6 +267,9 @@
       <Filter>FastCRC</Filter>
     </ClCompile>
     <ClCompile Include="DTP_CORE.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Plotter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

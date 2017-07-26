@@ -42,17 +42,17 @@ namespace CWA.DTP.FileTransfer
 
         internal PacketHandler BaseHandler;
 
-        internal FileSender(int _packetLength, FileSenderSecurityFlags flags)
+        internal FileSender(int _packetLength, FileTransferSecurityFlags flags)
         {
-            CheckSum = flags.HasFlag(FileSenderSecurityFlags.VerifyCheckSum);
-            CheckLen = flags.HasFlag(FileSenderSecurityFlags.VerifyLengh);
+            CheckSum = flags.HasFlag(FileTransferSecurityFlags.VerifyCheckSum);
+            CheckLen = flags.HasFlag(FileTransferSecurityFlags.VerifyLengh);
             PacketLength = _packetLength;
         }
 
-        internal FileSender(FileSenderSecurityFlags flags)
+        internal FileSender(FileTransferSecurityFlags flags)
         {
-            CheckSum = (flags & FileSenderSecurityFlags.VerifyCheckSum) != 0;
-            CheckLen = (flags & FileSenderSecurityFlags.VerifyLengh) != 0;
+            CheckSum = (flags & FileTransferSecurityFlags.VerifyCheckSum) != 0;
+            CheckLen = (flags & FileTransferSecurityFlags.VerifyLengh) != 0;
         }
 
         public event FileTrasferProcessHandler SendingProcessChanged;
@@ -63,8 +63,8 @@ namespace CWA.DTP.FileTransfer
 
         private void RaiseProcessEvent(FileTransferProcessArgs arg)
         {
-            Counter = (int)arg.PacketSended;
-            Total = arg.PacketSended + arg.PacketsLeft;
+            Counter = (int)arg.PacketTrasfered;
+            Total = arg.PacketTrasfered + arg.PacketsLeft;
             SendingProcessChanged?.Invoke(arg);
         }
 
@@ -184,13 +184,13 @@ namespace CWA.DTP.FileTransfer
 
         private Thread TimerThread, SenderThread;
 
-        public bool SendFileSync(string pcName, string NewName)
+        public bool SendFileSync(byte[] data, string NewName)
         {
             TimerThread = new Thread(TimerThreadMethod);
             TimerThread.Start();
             DateTime startTime = DateTime.Now;
             if (!HandleFiles(NewName)) return false;
-            _data = File.ReadAllBytes(pcName);
+            _data = data;
             var b = _data.Split(PacketLength);
             int totalCount = b.Count();
             int Current = 0;
@@ -222,11 +222,25 @@ namespace CWA.DTP.FileTransfer
             return true;
         }
 
+        public bool SendFileSync(string pcName, string NewName)
+        {
+            return SendFileSync(File.ReadAllBytes(pcName), NewName);
+        }
+
         public void SendFileAsync(string pcName, string NewName)
         {
             SenderThread = new Thread(p =>
             {
                 SendFileSync(pcName, NewName);
+            });
+            SenderThread.Start();
+        }
+
+        public void SendFileAsync(byte[] data, string NewName)
+        {
+            SenderThread = new Thread(p =>
+            {
+                SendFileSync(data, NewName);
             });
             SenderThread.Start();
         }

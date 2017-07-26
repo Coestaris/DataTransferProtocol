@@ -83,7 +83,7 @@ namespace CWA.DTP
             IsGlobalOpenedFiles = false;
         }
 
-        public int Length
+        public uint Length
         {
             get
             {

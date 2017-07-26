@@ -55,6 +55,8 @@
     <Compile Include="Handlers\DeviceControl.cs" />
     <Compile Include="Handlers\DTPMaster.cs" />
     <Compile Include="Handlers\FileHandlers\FailOperationException.cs" />
+    <Compile Include="Handlers\FileHandlers\FileTransfer\FileRecieverErrorArgs.cs" />
+    <Compile Include="Handlers\FileHandlers\FileTransfer\FileReceiverError.cs" />
     <Compile Include="Handlers\FileHandlers\SdCardBinnaryFileReadResult.cs" />
     <Compile Include="Handlers\FileHandlers\FileTransfer\FileReciver.cs" />
     <Compile Include="Handlers\FileHandlers\FileTransfer\FileSenderError.cs" />

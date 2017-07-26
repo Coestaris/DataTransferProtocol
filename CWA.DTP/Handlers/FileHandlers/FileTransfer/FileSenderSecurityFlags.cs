@@ -28,7 +28,7 @@ using System;
 namespace CWA.DTP.FileTransfer
 {
     [Flags]
-    public enum FileSenderSecurityFlags
+    public enum FileTransferSecurityFlags
     {
         VerifyCheckSum = 0,
         VerifyLengh = 1

@@ -27,29 +27,28 @@ using System;
 
 namespace CWA.DTP
 {
-
-
     public sealed class SdCardBinnaryFile
     {
         internal PacketHandler ph;
         internal SdCardFile ParentFile;
-        private int cacheLength;
+        private UInt32 cacheLength;
 
         internal SdCardBinnaryFile(SdCardFile ParentFile, PacketHandler ph)
         {
             this.ph = ph;
             this.ParentFile = ParentFile;
-            cacheLength = (int)ParentFile.Length;
+            cacheLength = ParentFile.Length;
         }
 
-        public int CursorPos { get; set; }
+        public UInt32 CursorPos { get; set; }
 
+        #region Write Methods
         public bool Write(string val)
         {
             if (ph.File_Append(System.Text.Encoding.Default.GetBytes(val)))
             {
-                cacheLength += val.Length;
-                CursorPos += val.Length;
+                cacheLength += (UInt32)val.Length;
+                CursorPos += (UInt32)val.Length;
                 return true;
             }
             return false;
@@ -77,6 +76,17 @@ namespace CWA.DTP
             return false;
         }
 
+        public bool Write(UInt16 val)
+        {
+            if (ph.File_Append(BitConverter.GetBytes(val)))
+            {
+                cacheLength += 2;
+                CursorPos += 2;
+                return true;
+            }
+            return false;
+        }
+
         public bool Write(int val)
         {
             if (ph.File_Append(BitConverter.GetBytes(val)))
@@ -88,7 +98,29 @@ namespace CWA.DTP
             return false;
         }
 
+        public bool Write(UInt32 val)
+        {
+            if (ph.File_Append(BitConverter.GetBytes(val)))
+            {
+                cacheLength += 4;
+                CursorPos += 4;
+                return true;
+            }
+            return false;
+        }
+
         public bool Write(long val)
+        {
+            if (ph.File_Append(BitConverter.GetBytes(val)))
+            {
+                cacheLength += 8;
+                CursorPos += 8;
+                return true;
+            }
+            return false;
+        }
+
+        public bool Write(UInt64 val)
         {
             if (ph.File_Append(BitConverter.GetBytes(val)))
             {
@@ -153,7 +185,9 @@ namespace CWA.DTP
             }
             return false;
         }
+        #endregion
 
+        #region Read Methods
         private SdCardBinnaryFileReadResult<object> ReadByte()
         {
             if (CursorPos + 1 > cacheLength)
@@ -180,6 +214,32 @@ namespace CWA.DTP
             return new SdCardBinnaryFileReadResult<object>(0, false);
         }
 
+        private SdCardBinnaryFileReadResult<object> ReadShort()
+        {
+            if (CursorPos + 2 > cacheLength)
+                throw new ArgumentOutOfRangeException();
+            var res = ph.File_Read(CursorPos, 2);
+            if (res.Status == PacketHandler.WriteReadFileHandleResult.OK)
+            {
+                CursorPos += 2;
+                return new SdCardBinnaryFileReadResult<object>(BitConverter.ToInt16(res.Result, 0), true);
+            }
+            return new SdCardBinnaryFileReadResult<object>(0, false);
+        }
+
+        private SdCardBinnaryFileReadResult<object> ReadUInt16()
+        {
+            if (CursorPos + 2 > cacheLength)
+                throw new ArgumentOutOfRangeException();
+            var res = ph.File_Read(CursorPos, 2);
+            if (res.Status == PacketHandler.WriteReadFileHandleResult.OK)
+            {
+                CursorPos += 2;
+                return new SdCardBinnaryFileReadResult<object>(BitConverter.ToUInt16(res.Result, 0), true);
+            }
+            return new SdCardBinnaryFileReadResult<object>(0, false);
+        }
+
         private SdCardBinnaryFileReadResult<object> ReadInt()
         {
             if (CursorPos + 4 > cacheLength)
@@ -192,8 +252,8 @@ namespace CWA.DTP
             }
             return new SdCardBinnaryFileReadResult<object>(0, false);
         }
-        
-        private SdCardBinnaryFileReadResult<object> ReadFloat()
+
+        private SdCardBinnaryFileReadResult<object> ReadUInt32()
         {
             if (CursorPos + 4 > cacheLength)
                 throw new ArgumentOutOfRangeException();
@@ -201,20 +261,7 @@ namespace CWA.DTP
             if (res.Status == PacketHandler.WriteReadFileHandleResult.OK)
             {
                 CursorPos += 4;
-                return new SdCardBinnaryFileReadResult<object>(BitConverter.ToSingle(res.Result, 0), true);
-            }
-            return new SdCardBinnaryFileReadResult<object>(0, false);
-        }
-        
-        private SdCardBinnaryFileReadResult<object> ReadShort()
-        {
-            if (CursorPos + 2 > cacheLength)
-                throw new ArgumentOutOfRangeException();
-            var res = ph.File_Read(CursorPos, 2);
-            if (res.Status == PacketHandler.WriteReadFileHandleResult.OK)
-            {
-                CursorPos += 2;
-                return new SdCardBinnaryFileReadResult<object>(BitConverter.ToInt16(res.Result, 0), true);
+                return new SdCardBinnaryFileReadResult<object>(BitConverter.ToUInt32(res.Result, 0), true);
             }
             return new SdCardBinnaryFileReadResult<object>(0, false);
         }
@@ -232,6 +279,32 @@ namespace CWA.DTP
             return new SdCardBinnaryFileReadResult<object>(0, false);
         }
 
+        private SdCardBinnaryFileReadResult<object> ReadUInt64()
+        {
+            if (CursorPos + 8 > cacheLength)
+                throw new ArgumentOutOfRangeException();
+            var res = ph.File_Read(CursorPos, 8);
+            if (res.Status == PacketHandler.WriteReadFileHandleResult.OK)
+            {
+                CursorPos += 8;
+                return new SdCardBinnaryFileReadResult<object>(BitConverter.ToUInt64(res.Result, 0), true);
+            }
+            return new SdCardBinnaryFileReadResult<object>(0, false);
+        }
+
+        private SdCardBinnaryFileReadResult<object> ReadFloat()
+        {
+            if (CursorPos + 4 > cacheLength)
+                throw new ArgumentOutOfRangeException();
+            var res = ph.File_Read(CursorPos, 4);
+            if (res.Status == PacketHandler.WriteReadFileHandleResult.OK)
+            {
+                CursorPos += 4;
+                return new SdCardBinnaryFileReadResult<object>(BitConverter.ToSingle(res.Result, 0), true);
+            }
+            return new SdCardBinnaryFileReadResult<object>(0, false);
+        }
+
         private SdCardBinnaryFileReadResult<object> ReadDouble()
         {
             if (CursorPos + 8 > cacheLength)
@@ -244,8 +317,9 @@ namespace CWA.DTP
             }
             return new SdCardBinnaryFileReadResult<object>(0, false);
         }
+        #endregion
 
-        public SdCardBinnaryFileReadResult<byte[]> ReadByteArray(int length)
+        public SdCardBinnaryFileReadResult<byte[]> ReadByteArray(UInt32 length)
         {
             if (CursorPos + length > cacheLength)
                 throw new ArgumentOutOfRangeException();
@@ -259,7 +333,8 @@ namespace CWA.DTP
         }
 
         /// <summary>
-        /// Читает с SD карты значение указанного типа. В данный момент реализованы следующие типы: <see cref="Byte"/>, <see cref="Char"/>, <see cref="Int16"/>, <see cref="Int32"/>, <see cref="Int64"/>, <see cref="Single"/>, <see cref="Double"/> и <see cref="Boolean"/>.
+        /// Читает с SD карты значение указанного типа. В данный момент реализованы следующие типы: <see cref="Byte"/>, <see cref="Char"/>, <see cref="Int16"/>, <see cref="Int32"/>,
+        /// <see cref="Int64"/>, <see cref="Single"/>, <see cref="Double"/>, <see cref="Boolean"/>, <see cref="UInt16"/>, <see cref="UInt32"/> и <see cref="UInt64"/>.
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
@@ -294,17 +369,30 @@ namespace CWA.DTP
             {
                 var res = ReadDouble();
                 return new SdCardBinnaryFileReadResult<T>((T)res.Result, res.Succeed);
-            }
-            if (type == typeof(bool))
+            } else if (type == typeof(bool))
             {
                 var res = ReadBool();
                 return new SdCardBinnaryFileReadResult<T>((T)res.Result, res.Succeed);
-            }
-            if (type == typeof(char))
+            } else if (type == typeof(char))
             {
                 var res = ReadByte();
                 return new SdCardBinnaryFileReadResult<T>((T)res.Result, res.Succeed);
+            } else if (type == typeof(UInt16))
+            {
+                var res = ReadUInt16();
+                return new SdCardBinnaryFileReadResult<T>((T)res.Result, res.Succeed);
             }
+            else if (type == typeof(UInt32))
+            {
+                var res = ReadUInt32();
+                return new SdCardBinnaryFileReadResult<T>((T)res.Result, res.Succeed);
+            }
+            else if (type == typeof(UInt64))
+            {
+                var res = ReadUInt64();
+                return new SdCardBinnaryFileReadResult<T>((T)res.Result, res.Succeed);
+            }
+
             else throw new ArgumentException("Неподдерживаемый тип аргумента.", nameof(type));
         }
     }

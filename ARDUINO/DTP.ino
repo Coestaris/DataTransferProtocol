@@ -40,7 +40,6 @@ void HandlePacket(byte* data, int dataLen, uint16_t command) {
 			path += (char)data[i];
 
 		File a = SD.open(path.c_str());
-
 		if (!SD.exists(path.c_str()))
 		{
 			status = DTP_ANSWER_STATUS::Error;
@@ -48,7 +47,6 @@ void HandlePacket(byte* data, int dataLen, uint16_t command) {
 			dataBytes = new byte[1]{ 0 };
 			break;
 		}
-
 		dir_t d;
 		if (!a.dirEntry(&d));
 		uint16_t date = d.creationDate;
@@ -294,9 +292,14 @@ void HandlePacket(byte* data, int dataLen, uint16_t command) {
 		uint32_t length = (data[7] << 24) | (data[6] << 16) | (data[5] << 8) | data[4];
 
 		WriteFile.seek(startBlock);
-		byte* tmpBuff = new byte[length];
+		dataBytes = new byte[length];
+		dataBytesLen = length;
 
-		int newLength = WriteFile.readBytes(tmpBuff, length);
+		uint32_t newLength = WriteFile.readBytes(dataBytes, length);
+		
+		if (newLength != length)
+			Error(ERROR_SD_CARDINIT);
+		
 		if (newLength == -1)
 		{
 			status = DTP_ANSWER_STATUS::Error;
@@ -305,19 +308,21 @@ void HandlePacket(byte* data, int dataLen, uint16_t command) {
 			break;
 		};
 		
-		//File f = SD.open("log11.txt", FILE_WRITE);
-		//f.print("Packet:");
-		//f.println(ii++);
-		//f.println(startBlock);
-		//f.println(startBlock);
-		//f.println(length);
-		//f.println(newLength);
-		//f.close();
-
-		dataBytesLen = newLength;
-		dataBytes = new byte[newLength];
-		memcpy(dataBytes, tmpBuff, newLength);
-		delete[] tmpBuff;
+		File f = SD.open("log13.txt", O_CREAT | O_WRITE | O_APPEND);
+		f.print("Packet:");
+		f.print(ii++);
+		f.print(" ");
+		f.print(startBlock);
+		f.print(" ");
+		f.print(length);
+		f.print(". ");
+		for (int i = 0; i <= 7; i++)
+		{
+			f.print(data[i]);
+			f.print(',');
+		}
+		f.println();
+		f.close();
 		break;
 	}
 
@@ -774,7 +779,14 @@ void HandlePacket(byte* data, int dataLen, uint16_t command) {
 
 }
 
+#include "Plotter.h"
+
 void setup() {
+	
+	PLOTTER_INIT();
+	
+	PLOTTER_moveBackward(12);
+
 	pinMode(SpeakerPinPower, OUTPUT);
 	pinMode(SDCSPin, OUTPUT);
 	Serial.begin(115200);

@@ -32,7 +32,7 @@ namespace CWA.DTP.FileTransfer
         public long TimeSpend { get; private set; }
         public double TimeLeft { get; private set; }
         public long PacketsLeft { get; private set; }
-        public long PacketSended { get; private set; }
+        public long PacketTrasfered { get; private set; }
         public double Speed { get; private set; }
         public int PacketsLength { get; private set; }
 
@@ -41,7 +41,7 @@ namespace CWA.DTP.FileTransfer
             TimeSpend = timeSpend;
             TimeLeft = timeLeft;
             PacketsLeft = packetLeft;
-            PacketSended = packetSended;
+            PacketTrasfered = packetSended;
             Speed = speed;
             PacketsLength = packetLength;
         }

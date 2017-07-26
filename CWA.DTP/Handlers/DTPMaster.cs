@@ -31,9 +31,17 @@ namespace CWA.DTP
 
         public DeviceControl Device { get; private set; }
 
-        public FileSender CreateFileSender(FileSenderSecurityFlags flags)
+        public FileSender CreateFileSender(FileTransferSecurityFlags flags)
         {
             return new FileSender(flags)
+            {
+                BaseHandler = ph
+            };
+        }
+
+        public FileReceiver CreateFileReceiver(FileTransferSecurityFlags flags)
+        {
+            return new FileReceiver(flags)
             {
                 BaseHandler = ph
             };

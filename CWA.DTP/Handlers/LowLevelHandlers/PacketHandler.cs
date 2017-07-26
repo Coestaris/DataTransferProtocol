@@ -87,15 +87,15 @@ namespace CWA.DTP
                 {
                     Board = (Board)(answer.Data[0]),
                     BoardArchitecture = (BoardArchitecture)(answer.Data[1]),
-                    StackFreeMemory = BitConverter.ToInt32(answer.Data, 2),
+                    StackFreeMemory = BitConverter.ToUInt32(answer.Data, 2),
                     CPU_F = BitConverter.ToInt64(answer.Data, 6),
-                    GCC_verison = BitConverter.ToInt32(answer.Data, 14),
-                    ARD_version = BitConverter.ToInt32(answer.Data, 18),
-                    DTP_version = BitConverter.ToInt32(answer.Data, 22),
+                    GCC_verison = BitConverter.ToUInt32(answer.Data, 14),
+                    ARD_version = BitConverter.ToUInt32(answer.Data, 18),
+                    DTP_version = BitConverter.ToUInt32(answer.Data, 22),
                     IsConnectSDModule = answer.Data[26] == 1,
                     IsConnectTimeModule = answer.Data[27] == 1,
-                    FlashMemorySize = BitConverter.ToInt32(answer.Data, 28),
-                    SRAMMemorySize = BitConverter.ToInt32(answer.Data, 32)
+                    FlashMemorySize = BitConverter.ToUInt32(answer.Data, 28),
+                    SRAMMemorySize = BitConverter.ToUInt32(answer.Data, 32)
                 };
             }
 
@@ -128,22 +128,22 @@ namespace CWA.DTP
                     },
                     MajorVersion = answer.Data[8],
                     MinorVersion = answer.Data[9],
-                    SerialNumber = BitConverter.ToInt32(answer.Data, 10),
+                    SerialNumber = BitConverter.ToUInt32(answer.Data, 10),
                     ManufacturingDateMonth = answer.Data[14],
                     ManufacturingDateYear = (short)(BitConverter.ToInt16(answer.Data, 15) + 2000),
-                    CardSize = BitConverter.ToInt32(answer.Data, 17),
+                    CardSize = BitConverter.ToUInt32(answer.Data, 17),
                     FlashEraseSize = answer.Data[21],
                     EraseSingleBlock = answer.Data[22] == 1,
                     FatType = (SdCardFatType)answer.Data[23],
                     BlocksPerCluster = answer.Data[24],
-                    ClusterCount = BitConverter.ToInt32(answer.Data, 25),
-                    FreeClusters = BitConverter.ToInt32(answer.Data, 29),
-                    FreeSpace = BitConverter.ToInt32(answer.Data, 33),
-                    FatStartBlock = BitConverter.ToInt32(answer.Data, 37),
+                    ClusterCount = BitConverter.ToUInt32(answer.Data, 25),
+                    FreeClusters = BitConverter.ToUInt32(answer.Data, 29),
+                    FreeSpace = BitConverter.ToUInt32(answer.Data, 33),
+                    FatStartBlock = BitConverter.ToUInt32(answer.Data, 37),
                     FatCount = answer.Data[41],
-                    BlocksPerFat = BitConverter.ToInt32(answer.Data, 42),
-                    RootDirStart = BitConverter.ToInt32(answer.Data, 46),
-                    DataStartBlock = BitConverter.ToInt32(answer.Data, 50),
+                    BlocksPerFat = BitConverter.ToUInt32(answer.Data, 42),
+                    RootDirStart = BitConverter.ToUInt32(answer.Data, 46),
+                    DataStartBlock = BitConverter.ToUInt32(answer.Data, 50),
                     Type = (CardType)answer.Data[54],
                 };
             }
@@ -224,7 +224,7 @@ namespace CWA.DTP
         {
             public WriteReadFileHandleResult Status { get; internal set; } = WriteReadFileHandleResult.Fail;
             public byte[] Result { get; internal set; } = new byte[0];
-            public int ErrorByteIndex { get; internal set; }
+            public UInt32 ErrorByteIndex { get; internal set; }
 
             internal DataRequestResult() { }
         }
@@ -232,7 +232,7 @@ namespace CWA.DTP
         public class FileLengthRequestResult
         {
             public FileDirHandleResult Status { get; internal set; } = FileDirHandleResult.Fail;
-            public int Length { get; internal set; } = 0;
+            public uint Length { get; internal set; } = 0;
 
             internal FileLengthRequestResult() { }
         }
@@ -403,7 +403,7 @@ namespace CWA.DTP
                 {
                     case (1):
                         result_.Status = WriteReadFileHandleResult.CantReadData;
-                        result_.ErrorByteIndex = BitConverter.ToInt32(result.Data, 1);
+                        result_.ErrorByteIndex = BitConverter.ToUInt32(result.Data, 1);
                         return result_;
                     default:
                         result_.Status =  WriteReadFileHandleResult.Fail;
@@ -431,12 +431,17 @@ namespace CWA.DTP
             return new PacketAnswerTotalInfo(GetResult(CommandType.GetInfo));
         }
 
-        public DataRequestResult File_Read(int offset, int length)
+        public DataRequestResult File_Read(UInt32 offset, UInt32 length)
         {
             var result_ = new DataRequestResult();
             byte[] data_ = new byte[8];
             Buffer.BlockCopy(BitConverter.GetBytes(offset), 0, data_, 0, 4);
             Buffer.BlockCopy(BitConverter.GetBytes(length), 0, data_, 4, 4);
+
+
+            Console.WriteLine("{0} {1}. Bytes: {2}", offset, length, string.Join(",", data_));
+            
+                
             var result = GetResult(CommandType.File_GetFileData, data_);
             if (result.IsEmpty)
             {
@@ -510,11 +515,11 @@ namespace CWA.DTP
 
         public FileLengthRequestResult File_GetLength()
         {
-            var Length = 0;
+            UInt32 Length = 0;
             var result = GetResult(CommandType.File_GetFileLength);
             if (result.IsEmpty) return new FileLengthRequestResult();
             if (result.Status == AnswerStatus.Error) return new FileLengthRequestResult();
-            Length = BitConverter.ToInt32(result.Data, 0);
+            Length = BitConverter.ToUInt32(result.Data, 0);
             return new FileLengthRequestResult()
             {
                 Length = Length,

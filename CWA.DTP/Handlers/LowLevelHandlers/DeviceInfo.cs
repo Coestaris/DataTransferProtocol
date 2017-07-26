@@ -24,21 +24,23 @@
 */
 
 
+using System;
+
 namespace CWA.DTP
 {
     public class DeviceInfo
     {
         public Board Board { get; internal set; }
         public BoardArchitecture BoardArchitecture { get; internal set; }
-        public int StackFreeMemory { get; internal set; }
+        public UInt32 StackFreeMemory { get; internal set; }
         public long CPU_F { get; internal set; }
-        public int GCC_verison { get; internal set; }
-        public int ARD_version { get; internal set; }
-        public int DTP_version { get; internal set; }
+        public UInt32 GCC_verison { get; internal set; }
+        public UInt32 ARD_version { get; internal set; }
+        public UInt32 DTP_version { get; internal set; }
         public bool IsConnectSDModule { get; internal set; }
         public bool IsConnectTimeModule { get; internal set; }
-        public int FlashMemorySize { get; internal set; }
-        public int SRAMMemorySize { get; internal set; }
+        public UInt32 FlashMemorySize { get; internal set; }
+        public UInt32 SRAMMemorySize { get; internal set; }
 
         internal DeviceInfo() { }
 

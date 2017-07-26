@@ -23,60 +23,17 @@
 
 */
 
-namespace CWA.DTP
+
+namespace CWA.DTP.FileTransfer
 {
-    public enum CardType
+    public enum FileReceiverError
     {
-        SD1 = 0x10,
-        SD2 = 0x20,
-        SDHC = 0x30,
-        Unknown = 0x40
-    };
-
-    public enum Board
-    {
-        Yun,
-        Uno,
-        DueMulanove,
-        Nano,
-        Mega,
-        Adk,
-        Leonardo,
-        LeonardoEth,
-        Micro,
-        Esplora,
-        Mini,
-        Ethernet,
-        Fio,
-        BT,
-        LilypadUSB,
-        Lilypad,
-        Pro,
-        NG,
-        RobotControl,
-        RobotMotor,
-        Gemma,
-        CircuitPlay,
-        YunMini,
-        Industrial101,
-        LinioOne,
-        UnoWifi,
-        Unknown
-    };
-
-    public enum BoardArchitecture
-    {
-        AVR,
-        ARM,
-        I686,
-        I586,
-        Unknown
-    };
-
-    public enum SdCardFatType
-    {
-        FAT12 = 0xc,
-        FAT16 = 0x10,
-        FAT32 = 0x20,
-    };
+        CantGetPacket,
+        CantOpenFile,
+        CantCloseFile,
+        NotEqualSizes,
+        CantGetHashOfFile,
+        HashesNotEqual,
+        CantGetFileSize,
+    }
 }

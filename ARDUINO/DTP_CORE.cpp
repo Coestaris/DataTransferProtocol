@@ -26,11 +26,11 @@ byte* SplitNumber(int num) {
 #ifdef SimpleCRC
 int ComputeChecksum(const byte* data_p, int length) {
 	unsigned char x;
-	unsigned short crc = 0xFFFF;
+	unsigned int crc = 0xFFFF;
 	while (length--) {
 		x = crc >> 8 ^ *data_p++;
 		x ^= x >> 4;
-		crc = (crc << 8) ^ ((int)(x << 12)) ^ ((int)(x << 5)) ^ ((int)x);
+		crc = (crc << 8) ^ ((long)(x << 12)) ^ ((long)(x << 5)) ^ ((long)x);
 	}
 	return crc;
 }

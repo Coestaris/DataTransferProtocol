@@ -1,11 +1,7 @@
 ﻿using CWA.DTP;
+using CWA.DTP.FileTransfer;
 using System;
-using System.Collections.Generic;
-using System.IO;
 using System.IO.Ports;
-using System.Linq;
-using System.Reflection;
-using System.Threading;
 
 namespace TestsForLib
 {
@@ -35,6 +31,7 @@ namespace TestsForLib
 
         static void Main(string[] args)
         {
+            /*
             SerialPort port = new SerialPort("COM6", 115200);
             DTPMaster master = new DTPMaster(
                 new SerialPacketReader(port, 5000),
@@ -46,190 +43,39 @@ namespace TestsForLib
             if (!master.Device.Test())
                 Console.WriteLine("Cant test device");
 
-
-            var a = master.CreateDirectoryHandler("/Tools/Scripts/");
-
-            Console.WriteLine(a.IsExists);
-
-
-            Console.WriteLine("DIR INFO");
-            Console.WriteLine(a.DirectoryInfo);
-            Console.WriteLine("SUB DIRS");
-            Console.WriteLine(string.Join("\n", "    --   " + a.SubDirectroies.Select(p => p.DirectoryPath).ToArray()));
-            Console.WriteLine("SUB FILES");
-            Console.WriteLine(string.Join("\n", "    --   " + a.SubFiles.Select(p => p.FilePath).ToArray()));
-
-
+            Console.WriteLine("Press to start");
             Console.ReadKey();
 
-            /*
+            var a = master.CreateFileReceiver(FileTransferSecurityFlags.VerifyCheckSum | FileTransferSecurityFlags.VerifyLengh);
 
-            var a = master.CreateFileHandler("/File.txt").Open(false);
-            var bf = a.GetBinnaryFile();
-
-            const int maxLength = 500;
-
-            byte[] buffer = new byte[a.Length];
-
-            var len = a.Length;
-
-            var currIndex = 0;
-            var delta = 0;
-            var index = 0;
-            while(currIndex < len)
-            {
-
-                if (currIndex + maxLength > len)
-                {
-                    delta = len - currIndex;
-                    currIndex = len;
-                }
-                else
-                {
-                    currIndex += maxLength;
-                    delta = maxLength;
-                }
-                Console.WriteLine("{0} {1}", currIndex, delta);
-                var res = bf.ReadByteArray(delta);
-                if (!res.Succeed)
-                    Console.WriteLine("Cant read Packet!");
-                else
-                {
-                    Buffer.BlockCopy(res.Result, 0, buffer, index, delta);
-                    index += delta;
-                }
-            }
-
-            File.Create("test.txt").Close();
-            File.WriteAllBytes("test.txt", buffer);
-
-            a.Close();
-
-
+            a.PacketLength = 200;
+            a.ReceiveProcessChanged += A_ReceiveProcessChanged;
+            a.ReceiveError += A_ReceiveError;
+            a.ReceivingEnd += A_ReceivingEnd;
+            a.ReceiveFileSync("newnewAbout.txt", "/newnewAbout1.txt");
             */
-            //a.ClearAllBytes();
-            //Dictionary<string, object> dict = new Dictionary<string, object>()
-            //{
-            //    { "IntValue1", 2 },
-            //    { "IntValue2", 123123 },
-            //    { "IntValue3", -6898 },
-            //    { "ByteValue1", (byte)93 },
-            //    { "ByteValue2", (byte)6 },
-            //    { "ByteValue3", (byte)222 },
-            //    { "ShortValue1", (short)3123 },
-            //    { "ShortValue2", (short)32 },
-            //    { "ShortValue3", (short)8999 },
-            //    { "LongValue1", 333333333333L },
-            //    { "LongValue2", 2222222222222222222L },
-            //    { "LongValue3", 11111111111111111111L },
-            //    { "FloatValue1", 23f },
-            //    { "FloatValue2", 2323.12312312f },
-            //    { "FloatValue3", 111111.22222233f },
-            //    { "DoubleValue1", 123123.123123123 },
-            //    { "DoubleValue2", 3333333333.333333333 },
-            //    { "DoubleValue3", 228228/22+(double)655/23231 },
-            //    { "BoolValue1", true },
-            //    { "BoolValue2", true }
-            //};
-            //foreach (var item in dict)
-            //{
-            //    var type = item.Value.GetType();
-            //    if (type == typeof(byte))
-            //    {
-            //        if (!bf.Write((byte)item.Value))
-            //            Console.WriteLine("Cant write {0}", item.Key);
-            //        else Console.WriteLine("Succs: {0}", item.Key);
-            //    }
-            //    else if (type == typeof(short))
-            //    {
-            //        if (!bf.Write((short)item.Value))
-            //            Console.WriteLine("Cant write {0}", item.Key);
-            //        else Console.WriteLine("Succs: {0}", item.Key);
-            //    }
-            //    else if (type == typeof(int))
-            //    {
-            //        if (!bf.Write((int)item.Value))
-            //            Console.WriteLine("Cant write {0}", item.Key);
-            //        else Console.WriteLine("Succs: {0}", item.Key);
-            //    }
-            //    else if (type == typeof(long))
-            //    {
-            //        if (!bf.Write((long)item.Value))
-            //            Console.WriteLine("Cant write {0}", item.Key);
-            //        else Console.WriteLine("Succs: {0}", item.Key);
-            //    }
-            //    else if (type == typeof(float))
-            //    {
-            //        if (!bf.Write((float)item.Value))
-            //            Console.WriteLine("Cant write {0}", item.Key);
-            //        else Console.WriteLine("Succs: {0}", item.Key);
-            //    }
-            //    else if (type == typeof(double))
-            //    {
-            //        if (!bf.Write((double)item.Value))
-            //            Console.WriteLine("Cant write {0}", item.Key);
-            //        else Console.WriteLine("Succs: {0}", item.Key);
-            //    }
-            //    else if (type == typeof(bool))
-            //    {
-            //        if (!bf.Write((bool)item.Value))
-            //            Console.WriteLine("Cant write {0}", item.Key);
-            //        else Console.WriteLine("Succs: {0}", item.Key);
-            //    }
-            //    else Console.WriteLine("Unkown type {0}", type.FullName);
-            //}
-            //bf.CursorPos = 0;
-            //var res1 = bf.ReadByteArray(a.Length);
-            //if (res1.Succeed)
-            //    Console.WriteLine('{' + string.Join(", ", res1.Result) + '}');
-            //bf.CursorPos = 0;
-            //foreach (var item in dict)
-            //{
-            //    var type = item.Value.GetType();
-            //    if (type == typeof(byte))
-            //    {
-            //        var res = bf.Read<byte>();
-            //        if (!res.Succeed) Console.WriteLine("Cant read {0}", item.Key);
-            //        else Console.WriteLine("{0}. Readed: {1}. Ori: {2}", item.Key, res.Result, item.Value);
-            //    }
-            //    else if (type == typeof(short))
-            //    {
-            //        var res = bf.Read<short>();
-            //        if (!res.Succeed) Console.WriteLine("Cant read {0}", item.Key);
-            //        else Console.WriteLine("{0}. Readed: {1}. Ori: {2}", item.Key, res.Result, item.Value);
-            //    }
-            //    else if (type == typeof(int))
-            //    {
-            //        var res = bf.Read<int>();
-            //        if (!res.Succeed) Console.WriteLine("Cant read {0}", item.Key);
-            //        else Console.WriteLine("{0}. Readed: {1}. Ori: {2}", item.Key, res.Result, item.Value);
-            //    }
-            //    else if (type == typeof(long))
-            //    {
-            //        var res = bf.Read<long>();
-            //        if (!res.Succeed) Console.WriteLine("Cant read {0}", item.Key);
-            //        else Console.WriteLine("{0}. Readed: {1}. Ori: {2}", item.Key, res.Result, item.Value);
-            //    }
-            //    else if (type == typeof(float))
-            //    {
-            //        var res = bf.Read<float>();
-            //        if (!res.Succeed) Console.WriteLine("Cant read {0}", item.Key);
-            //        else Console.WriteLine("{0}. Readed: {1}. Ori: {2}", item.Key, res.Result, item.Value);
-            //    }
-            //    else if (type == typeof(double))
-            //    {
-            //        var res = bf.Read<double>();
-            //        if (!res.Succeed) Console.WriteLine("Cant read {0}", item.Key);
-            //        else Console.WriteLine("{0}. Readed: {1}. Ori: {2}", item.Key, res.Result, item.Value);
-            //    }
-            //    else if (type == typeof(bool))
-            //    {
-            //        var res = bf.Read<bool>();
-            //        if (!res.Succeed) Console.WriteLine("Cant read {0}", item.Key);
-            //        else Console.WriteLine("{0}. Readed: {1}. Ori: {2}", item.Key, res.Result, item.Value);
-            //    }
-            //    else Console.WriteLine("Unkown type {0}", type.FullName);
-            //}
+
+            UInt32 a = (0 << 24) | (0 << 16) | (128 << 8) | 32;
+
+            Console.WriteLine(a);
+
+            Console.ReadKey();
+        }
+
+        private static void A_ReceivingEnd(FileTransferEndArgs arg)
+        {
+            Console.WriteLine("OK! {0}secs", arg.TimeSpend);
+        }
+
+        private static void A_ReceiveError(FileReceiverErrorArgs arg)
+        {
+            Console.WriteLine("Error {0}, IsCritival: {1}", arg.Error.ToString(), arg.IsCritical);
+        }
+
+        private static void A_ReceiveProcessChanged(FileTransferProcessArgs arg)
+        {
+            var total = arg.PacketTrasfered + arg.PacketsLeft;
+            Console.WriteLine("[{2:0}%]. Packet#{0}/{1}. Time Left: {3:0.####} sec. Speed: {4:0.####}KBytes", arg.PacketTrasfered, total, (double)arg.PacketTrasfered / total * 100, arg.TimeLeft, arg.Speed);
         }
     }
 

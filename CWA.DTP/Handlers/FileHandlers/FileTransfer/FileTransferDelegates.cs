@@ -30,4 +30,6 @@ namespace CWA.DTP.FileTransfer
     public delegate void FileTrasferEndHandler(FileTransferEndArgs arg);
 
     public delegate void FileSenderErrorHandler(FileSenderErrorArgs arg);
+
+    public delegate void FileRecieverErrorHandler(FileReceiverErrorArgs arg);
 }
