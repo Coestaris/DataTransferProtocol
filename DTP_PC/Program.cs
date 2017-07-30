@@ -31,36 +31,55 @@ namespace TestsForLib
 
         static void Main(string[] args)
         {
-            /*
-            SerialPort port = new SerialPort("COM6", 115200);
-            DTPMaster master = new DTPMaster(
-                new SerialPacketReader(port, 5000),
-                new SerialPacketWriter(port));
-
+           
+            if(!SerialPacketReader.FirstAvailable(5000, out var reader, out var writer))
+            {
+                Console.WriteLine("Can`t Find Any Device");
+                return;
+            }
+            DTPMaster master = new DTPMaster(reader, writer);
             if (!master.Device.SyncTyme())
-                Console.WriteLine("Cant sync time");
-
-            if (!master.Device.Test())
-                Console.WriteLine("Cant test device");
-
+            {
+                Console.WriteLine("Can`t Sync Time");
+                return;
+            }
             Console.WriteLine("Press to start");
+
             Console.ReadKey();
-
             var a = master.CreateFileReceiver(FileTransferSecurityFlags.VerifyCheckSum | FileTransferSecurityFlags.VerifyLengh);
-
-            a.PacketLength = 200;
+            a.PacketLength = 2000;
             a.ReceiveProcessChanged += A_ReceiveProcessChanged;
             a.ReceiveError += A_ReceiveError;
             a.ReceivingEnd += A_ReceivingEnd;
-            a.ReceiveFileSync("newnewAbout.txt", "/newnewAbout1.txt");
-            */
+            a.ReceiveFileAsync("dp.zip", "/dp.zip");
 
-            UInt32 a = (0 << 24) | (0 << 16) | (128 << 8) | 32;
+            Console.WriteLine("Enter:\n[A] - Abort\n[I] - Info\n");
 
-            Console.WriteLine(a);
-
-            Console.ReadKey();
+            while (true)
+            {
+                
+                switch(Console.ReadKey().Key)
+                {
+                    case (ConsoleKey.A):
+                        Console.WriteLine();
+                        Console.WriteLine("Aborting...");
+                        a.StopAsync();
+                        Console.WriteLine("DONE!");
+                        Console.ReadKey();
+                        return;
+                    case (ConsoleKey.I):
+                        Console.WriteLine();
+                        long total = lastInfo.PacketsLeft + lastInfo.PacketTrasfered;
+                        Console.WriteLine("[{2:0}%]. Packet#{0}/{1}. Time Left: {3:0.####} sec. Speed: {4:0.####}KBytes", lastInfo.PacketTrasfered, total, (double)lastInfo.PacketTrasfered / total * 100, lastInfo.TimeLeft, lastInfo.Speed);
+                        break;
+                    default:
+                        Console.Write("Unknown Input");
+                        break;
+                }
+            }
         }
+
+        private static FileTransferProcessArgs lastInfo;
 
         private static void A_ReceivingEnd(FileTransferEndArgs arg)
         {
@@ -74,8 +93,9 @@ namespace TestsForLib
 
         private static void A_ReceiveProcessChanged(FileTransferProcessArgs arg)
         {
-            var total = arg.PacketTrasfered + arg.PacketsLeft;
-            Console.WriteLine("[{2:0}%]. Packet#{0}/{1}. Time Left: {3:0.####} sec. Speed: {4:0.####}KBytes", arg.PacketTrasfered, total, (double)arg.PacketTrasfered / total * 100, arg.TimeLeft, arg.Speed);
+            lastInfo = arg;
+            long total = lastInfo.PacketsLeft + lastInfo.PacketTrasfered;
+            Console.Title = "Reciving... " + ((double)lastInfo.PacketTrasfered / total * 100).ToString();
         }
     }
 

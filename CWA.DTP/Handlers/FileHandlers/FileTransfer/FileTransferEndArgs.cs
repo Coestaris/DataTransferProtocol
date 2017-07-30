@@ -29,11 +29,14 @@ namespace CWA.DTP.FileTransfer
 {
     public class FileTransferEndArgs : EventArgs
     {
+        public bool IsForcedEnd { get; private set; }
+
         public double TimeSpend { get; private set; }
 
-        internal FileTransferEndArgs(double timeSpend)
+        internal FileTransferEndArgs(double timeSpend, bool isForcedEnd)
         {
             TimeSpend = timeSpend;
+            IsForcedEnd = isForcedEnd;
         }
     }
 }

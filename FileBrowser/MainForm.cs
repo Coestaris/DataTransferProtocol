@@ -144,6 +144,8 @@ namespace FileBrowser
                 port?.Close();
                 port = new SerialPort(portName, 115200);
                 Master = new DTPMaster(new SerialPacketReader(port, 4000), new SerialPacketWriter(port));
+                Master.Device.SyncTyme();
+
             } catch (Exception ex)
             {
                 if (System.Windows.Forms.MessageBox.Show(
@@ -193,8 +195,7 @@ namespace FileBrowser
 
         private void button1_Click(object sender, EventArgs e)
         {
-            //new SendDialog(ph, "CWADTP.pdb", "/CWADTP.pdb").ShowDialog();
-            //TrySetupFolder();
+
         }
 
         int lastColumn = 0;
@@ -232,6 +233,18 @@ namespace FileBrowser
             listView1.Width = Width - 40;
             listView1.Height = Height - 90;
             RecalcColumnHeaderWidth();
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            if (listView1.SelectedItems.Count == 1)
+                System.Windows.Forms.Clipboard.SetText(listView1.SelectedItems[0].SubItems[0].Text);
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            new SendDialog(Master).ShowDialog();
+            TrySetupFolder();
         }
     }
 

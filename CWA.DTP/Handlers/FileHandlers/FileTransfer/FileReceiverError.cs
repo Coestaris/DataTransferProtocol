@@ -28,6 +28,7 @@ namespace CWA.DTP.FileTransfer
 {
     public enum FileReceiverError
     {
+        FileNotExists,
         CantGetPacket,
         CantOpenFile,
         CantCloseFile,

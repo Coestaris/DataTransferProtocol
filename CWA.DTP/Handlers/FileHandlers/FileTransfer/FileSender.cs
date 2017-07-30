@@ -88,20 +88,26 @@ namespace CWA.DTP.FileTransfer
         {
             if (SenderThread == null)
                 throw new InvalidOperationException("Отправка либо не запущена, либо запущена как синхронный процесс (если так, то я хз как ты вызвал этот метод -_-)");
-            SenderThread?.Abort();
+
+            ForceStop = true;
+            while (SenderThread.IsAlive) Thread.Sleep(100);
+
+            if (!BaseHandler.File_Close())
+                RaiseErrorEvent(new FileSenderErrorArgs(FileSenderError.CantCloseFile, false));
+
             TimerThread.Abort();
         }
 
         private bool HandleFiles(string NewName)
         {
             var res = BaseHandler.File_Create(NewName);
-            if (res == PacketHandler.FileDirHandleResult.OK) { return true; }
-            else if (res == PacketHandler.FileDirHandleResult.Fail)
+            if (res == PacketHandler.FileDirHandleResult.Fail)
             {
                 RaiseErrorEvent(new FileSenderErrorArgs(FileSenderError.CantCreateFile, true));
                 return false;
             }
-            else
+
+            /*if(res == PacketHandler.FileDirHandleResult.FileOrDirAlreadyExist)
             {
                 if (BaseHandler.File_Delete(NewName) == PacketHandler.FileDirHandleResult.Fail)
                 {
@@ -113,7 +119,8 @@ namespace CWA.DTP.FileTransfer
                     RaiseErrorEvent(new FileSenderErrorArgs(FileSenderError.CantCreateFile, true));
                     return false;
                 }
-            }
+            }*/
+
             if (BaseHandler.File_Open(NewName, true) != PacketHandler.WriteReadFileHandleResult.OK)
             {
                 RaiseErrorEvent(new FileSenderErrorArgs(FileSenderError.CantOpenFile, true));
@@ -153,6 +160,8 @@ namespace CWA.DTP.FileTransfer
 
         private int Counter, CountOfData, LasProgress, OnseSecondProgress;
 
+        private bool ForceStop = false;
+
         private long Total;
 
         private double Speed, lSpeed, LeftTime, LastLeftTime;
@@ -186,6 +195,7 @@ namespace CWA.DTP.FileTransfer
 
         public bool SendFileSync(byte[] data, string NewName)
         {
+            ForceStop = false;
             TimerThread = new Thread(TimerThreadMethod);
             TimerThread.Start();
             DateTime startTime = DateTime.Now;
@@ -196,6 +206,11 @@ namespace CWA.DTP.FileTransfer
             int Current = 0;
             foreach (var c in b)
             {
+                if(ForceStop)
+                {
+                    RaiseEndEvent(new FileTransferEndArgs((DateTime.Now - startTime).TotalSeconds, true));
+                    return false;
+                }
                 Current++;
                 if (!BaseHandler.File_Append(c.ToArray()))
                 {
@@ -206,18 +221,26 @@ namespace CWA.DTP.FileTransfer
             }
             if (CheckLen)
             {
-                if (!CompareLength()) return false;
-                if (!BaseHandler.File_Close())
+                if (!CompareLength())
                 {
-                    RaiseErrorEvent(new FileSenderErrorArgs(FileSenderError.CantCloseFile, true));
+                    RaiseErrorEvent(new FileSenderErrorArgs(FileSenderError.LengthsNotEqual, false));
                     return false;
-                };
+                }
             }
             if (CheckSum)
             {
-                if (!CompareHash()) return false;
+                if (!CompareHash())
+                {
+                    RaiseErrorEvent(new FileSenderErrorArgs(FileSenderError.HashesNotEqual, false));
+                    return false;
+                }
             }
-            RaiseEndEvent(new FileTransferEndArgs((DateTime.Now - startTime).TotalSeconds));
+            if (!BaseHandler.File_Close())
+            {
+                RaiseErrorEvent(new FileSenderErrorArgs(FileSenderError.CantCloseFile, true));
+                return false;
+            };
+            RaiseEndEvent(new FileTransferEndArgs((DateTime.Now - startTime).TotalSeconds, false));
             _data = null;
             return true;
         }

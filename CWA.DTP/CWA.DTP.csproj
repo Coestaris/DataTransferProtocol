@@ -58,7 +58,7 @@
     <Compile Include="Handlers\FileHandlers\FileTransfer\FileRecieverErrorArgs.cs" />
     <Compile Include="Handlers\FileHandlers\FileTransfer\FileReceiverError.cs" />
     <Compile Include="Handlers\FileHandlers\SdCardBinnaryFileReadResult.cs" />
-    <Compile Include="Handlers\FileHandlers\FileTransfer\FileReciver.cs" />
+    <Compile Include="Handlers\FileHandlers\FileTransfer\FileReceiver.cs" />
     <Compile Include="Handlers\FileHandlers\FileTransfer\FileSenderError.cs" />
     <Compile Include="Handlers\FileHandlers\FileTransfer\FileSenderSecurityFlags.cs" />
     <Compile Include="Handlers\FileHandlers\FileTransfer\FileTransferDelegates.cs" />

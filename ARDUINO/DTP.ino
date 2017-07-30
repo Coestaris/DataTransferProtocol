@@ -288,8 +288,8 @@ void HandlePacket(byte* data, int dataLen, uint16_t command) {
 			dataBytes = new byte[1]{ 1 };
 			break;
 		}
-		uint32_t startBlock = (data[3] << 24) | (data[2] << 16) | (data[1] << 8) | data[0];
-		uint32_t length = (data[7] << 24) | (data[6] << 16) | (data[5] << 8) | data[4];
+		uint32_t startBlock = ((uint32_t)data[3] << 24) | ((uint32_t)data[2] << 16) | ((uint32_t)data[1] << 8) | (uint32_t)data[0];
+		uint32_t length = ((uint32_t)data[7] << 24) | ((uint32_t)data[6] << 16) | ((uint32_t)data[5] << 8) | (uint32_t)data[4];
 
 		WriteFile.seek(startBlock);
 		dataBytes = new byte[length];
@@ -307,7 +307,8 @@ void HandlePacket(byte* data, int dataLen, uint16_t command) {
 			dataBytes = new byte[1]{ 2 };
 			break;
 		};
-		
+
+		/*
 		File f = SD.open("log13.txt", O_CREAT | O_WRITE | O_APPEND);
 		f.print("Packet:");
 		f.print(ii++);
@@ -323,6 +324,8 @@ void HandlePacket(byte* data, int dataLen, uint16_t command) {
 		}
 		f.println();
 		f.close();
+		*/
+
 		break;
 	}
 
@@ -779,14 +782,10 @@ void HandlePacket(byte* data, int dataLen, uint16_t command) {
 
 }
 
-#include "Plotter.h"
-
 void setup() {
 	
 	PLOTTER_INIT();
 	
-	PLOTTER_moveBackward(12);
-
 	pinMode(SpeakerPinPower, OUTPUT);
 	pinMode(SDCSPin, OUTPUT);
 	Serial.begin(115200);

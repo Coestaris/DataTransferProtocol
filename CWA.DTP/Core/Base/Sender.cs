@@ -46,6 +46,14 @@ namespace CWA.DTP
             }
         }
 
+        public static Sender Nullable
+        {
+            get
+            {
+                return new Sender(SenderType.UnNamedByteMask);
+            }
+        }
+
         public Sender(SenderType type)
         {
             Type = type;

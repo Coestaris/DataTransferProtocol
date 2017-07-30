@@ -88,7 +88,41 @@ const int DirectoryBufferSize PROGMEM = 40;
 	void HandlePacket(byte* data, int dataLen, uint16_t command);
 #pragma endregion
 
+#pragma region Plotter
 
+#define PLOTTER_PauseLed 8
+#define PLOTTER_PauseCom 9
+#define PLOTTER_ButtonStop A2
+#define PLOTTER_PauseLed 8
+#define PLOTTER_PauseCom 9
+#define PLOTTER_ButtonStop A2
+#define PLOTTER_ButtonPause A1
+#define PLOTTER_Analog A0
+#define PLOTTER_XDIR 4
+#define PLOTTER_YDIR 2
+#define PLOTTER_ZDIR 6
+#define PLOTTER_XSTEP 5
+#define PLOTTER_YSTEP 3
+#define PLOTTER_ZSTEP 7
+#define PLOTTER_WORK 50 
+#define PLOTTER_IDLE 40
+#define CONFIGNAME "/config.cfg"
+
+
+
+	void PLOTTER_INIT();
+
+	void PLOTTER_ResetToDefault();
+
+	void PLOTTER_moveForward(uint32_t sm);
+
+	void PLOTTER_moveBackward(uint32_t sm);
+
+	void PLOTTER_delayMicros(uint32_t wt);
+
+	void PLOTTER_MoveSM(int32_t x, int32_t y, int32_t z);
+
+#pragma endregion
 
 #endif
 

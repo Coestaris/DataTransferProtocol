@@ -37,5 +37,6 @@ namespace CWA.DTP.FileTransfer
         CantGetHashOfFile,
         HashesNotEqual,
         CantGetFileSize,
+        LengthsNotEqual,
     }
 }

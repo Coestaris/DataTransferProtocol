@@ -42,5 +42,32 @@ namespace CWA.DTP
             _port.Write(packet, 0, packet.Length);
             return true; //Always okay
         }
+
+        public static bool FirstAvailable(int TimeOutInterval, out SerialPacketReader reader, out SerialPacketWriter writer)
+        {
+            reader = null; writer = null;
+            var ports = SerialPort.GetPortNames();
+            if (ports == null) return false;
+            foreach (var item in ports)
+            {
+                var port = new SerialPort(item, 115200);
+                try { port.Open(); }
+                catch { return false; }
+                if (port.IsOpen)
+                {
+                    reader = new SerialPacketReader(port, 500);
+                    writer = new SerialPacketWriter(port);
+                    var a = new PacketHandler(Sender.Nullable, new PacketListener(reader, writer));
+                    if (a.Device_Test())
+                    {
+                        reader.TimeOutInterval = TimeOutInterval;
+                        return true;
+                    }
+                    else return false;
+                }
+                else return false;
+            }
+            return false;
+        }
     }
 }

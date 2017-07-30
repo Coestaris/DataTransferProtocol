@@ -57,22 +57,26 @@ namespace CWA.DTP.FileTransfer
             ReceiveError?.Invoke(arg);
             if (arg.IsCritical)
             {
-                SenderThread?.Abort();
+                RecieverThread?.Abort();
                 TimerThread.Abort();
             }
         }
 
         public void StopAsync()
         {
-            if (SenderThread == null)
-                throw new InvalidOperationException("Отправка либо не запущена, либо запущена как синхронный процесс (если так, то я хз как ты вызвал этот метод -_-)");
-            SenderThread?.Abort();
+            ForceStop = true;
+
+            while (RecieverThread.IsAlive) Thread.Sleep(100);
+
             TimerThread.Abort();
         }
 
         private int Counter, CountOfData, LasProgress, OnseSecondProgress;
         private long Total;
         private double Speed, lSpeed, LeftTime, LastLeftTime;
+
+        private bool ForceStop = false;
+
 
         private void TimerThreadMethod()
         {
@@ -99,36 +103,44 @@ namespace CWA.DTP.FileTransfer
             }
         }
 
-        private Thread TimerThread, SenderThread;
+        private Thread TimerThread, RecieverThread;
+        private SdCardFile MainFile;
 
         public bool ReceiveFileSync(string pcName, string DeviceName)
         {
             TimerThread = new Thread(TimerThreadMethod);
             TimerThread.Start();
             DateTime startTime = DateTime.Now;
-            var a = new SdCardFile(DeviceName, BaseHandler);
+            MainFile = new SdCardFile(DeviceName, BaseHandler);
             try
             {
-                a.Open(false);
+                if (!MainFile.IsExists)
+                {
+                    RaiseErrorEvent(new FileReceiverErrorArgs(FileReceiverError.FileNotExists, true));
+                    return false;
+                }
             }
             catch
             {
                 RaiseErrorEvent(new FileReceiverErrorArgs(FileReceiverError.CantOpenFile, true));
                 return false;
             }
-            var bf = a.BinnaryFile;
-            bf.CursorPos = 0;
-            byte[] buffer = new byte[a.Length];
-            UInt32 len = 0;
-            try
+            try { MainFile.Open(false); }
+            catch
             {
-                len = a.Length;
+                RaiseErrorEvent(new FileReceiverErrorArgs(FileReceiverError.CantOpenFile, true));
+                return false;
             }
+            var bf = MainFile.BinnaryFile;
+            bf.CursorPos = 0;
+            UInt32 len = 0;
+            try { len = MainFile.Length; }
             catch
             {
                 RaiseErrorEvent(new FileReceiverErrorArgs(FileReceiverError.CantGetFileSize, true));
                 return false;
             }
+            byte[] buffer = new byte[len];
             UInt32 currentPacket = 0;
             UInt32 totalPackets = (UInt32)(len / PacketLength);
             UInt32 currIndex = 0, delta = 0, index = 0;
@@ -138,18 +150,14 @@ namespace CWA.DTP.FileTransfer
                 {
                     delta = len - currIndex;
                     currIndex = len;
-                }
+                } 
                 else
                 {
                     currIndex += (UInt32)PacketLength;
                     delta = (UInt32)PacketLength;
                 }
                 SdCardBinnaryFileReadResult<byte[]> res;
-                try
-                {
-                    //Console.WriteLine("{0} {1}", currIndex, delta);
-                    res = bf.ReadByteArray(delta);
-                }
+                try { res = bf.ReadByteArray(delta); }
                 catch
                 {
                     RaiseErrorEvent(new FileReceiverErrorArgs(FileReceiverError.CantGetPacket, true));
@@ -162,6 +170,14 @@ namespace CWA.DTP.FileTransfer
                 }
                 else
                 {
+                    if (ForceStop)
+                    {
+                        try { MainFile.Close(); }
+                        catch { RaiseErrorEvent(new FileReceiverErrorArgs(FileReceiverError.CantCloseFile, true)); }
+                        RaiseEndEvent(new FileTransferEndArgs((DateTime.Now - startTime).TotalSeconds, true));
+                        return false;
+                    }
+
                     currentPacket++;
                     RaiseProcessEvent(new FileTransferProcessArgs((long)(DateTime.Now - startTime).TotalSeconds, LeftTime, totalPackets - currentPacket, currentPacket, Speed, PacketLength));
                     Buffer.BlockCopy(res.Result, 0, buffer, (int)index, (int)delta);
@@ -170,19 +186,23 @@ namespace CWA.DTP.FileTransfer
             }
             File.Create(pcName).Close();
             File.WriteAllBytes(pcName, buffer);
-            a.Close();
-            RaiseEndEvent(new FileTransferEndArgs((DateTime.Now - startTime).TotalSeconds));
+            try { MainFile.Close(); } catch
+            {
+                RaiseErrorEvent(new FileReceiverErrorArgs(FileReceiverError.CantCloseFile, true));
+                return false;
+            }
+            RaiseEndEvent(new FileTransferEndArgs((DateTime.Now - startTime).TotalSeconds, false));
             return true;
         }
 
 
         public void ReceiveFileAsync(string pcName, string DeviceName)
         {
-            SenderThread = new Thread(p =>
+            RecieverThread = new Thread(p =>
             {
                 ReceiveFileSync(pcName, DeviceName);
             });
-            SenderThread.Start();
+            RecieverThread.Start();
         }
 
     }

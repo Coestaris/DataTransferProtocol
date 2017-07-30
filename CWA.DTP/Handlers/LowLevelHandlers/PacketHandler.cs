@@ -198,7 +198,7 @@ namespace CWA.DTP
         {
             OK,
             Fail,
-            FileOrDirJustExist,
+            FileOrDirAlreadyExist,
             FileOrDirNotExists
         }
 
@@ -294,7 +294,7 @@ namespace CWA.DTP
                 case (1):
                     return FileDirHandleResult.Fail;
                 case (2):
-                    return FileDirHandleResult.FileOrDirJustExist;
+                    return FileDirHandleResult.FileOrDirAlreadyExist;
                 default:
                     return FileDirHandleResult.Fail;
             }
@@ -340,9 +340,9 @@ namespace CWA.DTP
                 case (1):
                     return FileDirHandleResult.Fail;
                 case (2):
-                    return FileDirHandleResult.FileOrDirJustExist;
+                    return FileDirHandleResult.FileOrDirAlreadyExist;
                 case (3):
-                    return FileDirHandleResult.FileOrDirJustExist;
+                    return FileDirHandleResult.FileOrDirAlreadyExist;
                 default:
                     return FileDirHandleResult.Fail;
             }
@@ -437,11 +437,6 @@ namespace CWA.DTP
             byte[] data_ = new byte[8];
             Buffer.BlockCopy(BitConverter.GetBytes(offset), 0, data_, 0, 4);
             Buffer.BlockCopy(BitConverter.GetBytes(length), 0, data_, 4, 4);
-
-
-            Console.WriteLine("{0} {1}. Bytes: {2}", offset, length, string.Join(",", data_));
-            
-                
             var result = GetResult(CommandType.File_GetFileData, data_);
             if (result.IsEmpty)
             {
