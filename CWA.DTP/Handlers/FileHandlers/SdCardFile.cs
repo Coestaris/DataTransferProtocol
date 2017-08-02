@@ -33,11 +33,11 @@ namespace CWA.DTP
     {
         private static bool IsGlobalOpenedFiles = false;
 
-        private PacketHandler ph;
+        private GenerelaPacketHandler ph;
         
         public string FilePath { get; set; }
 
-        internal SdCardFile(string path, PacketHandler ph)
+        internal SdCardFile(string path, GenerelaPacketHandler ph)
         {
             FilePath = path;
             this.ph = ph;
@@ -45,14 +45,27 @@ namespace CWA.DTP
 
         public bool IsOpen { get; private set; }
 
+        public Tuple<byte, byte> CRC16
+        {
+            get
+            {
+                if (!IsExists)
+                    throw new FileHandlerException("Файл не существует");
+                var a = ph.File_GetCrC16(GenerelaPacketHandler.HashAlgorithm.CRC16);
+                if (a.Status != GenerelaPacketHandler.WriteReadFileHandleResult.OK)
+                    throw new FailOperationException("Не удалось получить хеш-код фалйа");
+                return new Tuple<byte, byte>(a.Result[0], a.Result[1]);
+            }
+        }
+
         public bool IsExists
         {
             get
             {
                 var res = ph.File_Exists(FilePath);
-                if (res == PacketHandler.FileExistsResult.Fail)
+                if (res == GenerelaPacketHandler.FileExistsResult.Fail)
                     throw new FailOperationException(res);
-                return res == PacketHandler.FileExistsResult.Exists;
+                return res == GenerelaPacketHandler.FileExistsResult.Exists;
             }
         }
 
@@ -65,7 +78,7 @@ namespace CWA.DTP
             if (IsGlobalOpenedFiles)
                 throw new FailOperationException("На этом домене уже есть открытый файл. Невозможно отрыть более однго файлов");
             var res = ph.File_Open(FilePath, ClearContent);
-            if (res != PacketHandler.WriteReadFileHandleResult.OK)
+            if (res != GenerelaPacketHandler.WriteReadFileHandleResult.OK)
                 throw new FailOperationException("Не удалось открыть файл", res);
             IsOpen = true;
             IsGlobalOpenedFiles = true;
@@ -90,7 +103,7 @@ namespace CWA.DTP
                 if (!IsOpen)
                     throw new FileHandlerException("Файл закрыт");
                 var res = ph.File_GetLength();
-                if(res.Status != PacketHandler.FileDirHandleResult.OK)
+                if(res.Status != GenerelaPacketHandler.FileDirHandleResult.OK)
                     throw new FailOperationException("Не удалось получить длину (размер) файла", res);
                 return res.Length;
             }
@@ -99,7 +112,7 @@ namespace CWA.DTP
         public SdCardFile Create()
         {
             var res = ph.File_Create(FilePath);
-            if(res != PacketHandler.FileDirHandleResult.OK)
+            if(res != GenerelaPacketHandler.FileDirHandleResult.OK)
                 throw new FailOperationException("Не удалось создать файл", res);
             return this;
         }
@@ -108,7 +121,7 @@ namespace CWA.DTP
         {
             if(IsOpen) if(!ph.File_Close()) throw new FailOperationException("Не удалось закрыть файл");
             var res = ph.File_Open(FilePath, true);
-            if(res != PacketHandler.WriteReadFileHandleResult.OK)
+            if(res != GenerelaPacketHandler.WriteReadFileHandleResult.OK)
                 throw new FailOperationException("Не удалось открыть файл", res);
             if (!IsOpen) if (!ph.File_Close()) throw new FailOperationException("Не удалось закрыть файл");
         }
@@ -116,7 +129,7 @@ namespace CWA.DTP
         public void Delete()
         {
             var res = ph.File_Delete(FilePath);
-            if (res != PacketHandler.FileDirHandleResult.OK)
+            if (res != GenerelaPacketHandler.FileDirHandleResult.OK)
                 throw new FailOperationException(res);
         }
 

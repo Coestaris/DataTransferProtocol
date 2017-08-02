@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using CWA.DTP;
 
 namespace CWA.DTP.FileTransfer
 {
@@ -16,7 +17,7 @@ namespace CWA.DTP.FileTransfer
 
         public int PacketLength { get; set; } = 3200;
 
-        internal PacketHandler BaseHandler;
+        internal GenerelaPacketHandler BaseHandler;
 
         //
         internal FileReceiver(int _packetLength, FileTransferSecurityFlags flags)
@@ -66,7 +67,7 @@ namespace CWA.DTP.FileTransfer
         {
             ForceStop = true;
 
-            while (RecieverThread.IsAlive) Thread.Sleep(100);
+            while (RecieverThread.ThreadState == ThreadState.Running) Thread.Sleep(100);
 
             TimerThread.Abort();
         }

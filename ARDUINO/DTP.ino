@@ -7,9 +7,7 @@ bool isOpenFile;
 
 int ii = 0;
 
-//#define DEBUG
-
-void HandlePacket(byte* data, int dataLen, uint16_t command) {
+void HandlePacket(byte* data, uint32_t dataLen, uint16_t command) {
 #pragma region Vars
 
 #ifdef DEBUG
@@ -94,12 +92,12 @@ void HandlePacket(byte* data, int dataLen, uint16_t command) {
 		error_code = DTP_ANSWER_ERRORCODE_TYPE::DATA;
 		delete[] dataBytes;
 		WriteFile.seek(0);
-		unsigned char x;
-		unsigned short crc = 0xFFFF;
-		unsigned int length = WriteFile.size();
-		for (int i = 0; i <= length; ++i)
+		uint8_t x;
+		uint16_t crc = 0xFFFF;
+		uint32_t length = WriteFile.size();
+		for (uint32_t i = 0; i <= length; ++i)
 		{
-			int b = WriteFile.read();
+			uint8_t b = WriteFile.read();
 			if (b == -1)
 			{
 				status = DTP_ANSWER_STATUS::Error;
@@ -107,9 +105,9 @@ void HandlePacket(byte* data, int dataLen, uint16_t command) {
 				dataBytes = new byte[1]{ 2 };
 				goto Exit;
 			}
-			x = crc >> 8 ^ b;
-			x ^= x >> 4;
-			crc = (crc << 8) ^ ((int)(x << 12)) ^ ((int)(x << 5)) ^ ((int)x);
+			x = (uint8_t)(crc >> 8 ^ b);
+			x ^= (uint8_t)(x >> 4);
+			crc = (crc <<(uint16_t)8) ^ (((uint16_t)x << (uint16_t)12)) ^ (((uint16_t)x << (uint16_t)5)) ^ (uint16_t)x;
 		}
 		byte* crc_;
 		crc_ = SplitNumber(crc);
@@ -136,7 +134,14 @@ void HandlePacket(byte* data, int dataLen, uint16_t command) {
 		memcpy(dataBytes, data, dataLen);
 		break;
 	}
-
+	case DTP_COMMANDTYPE::Plotter_RefreshConfig:
+	{
+		status = DTP_ANSWER_STATUS::OK;
+		error_code = DTP_ANSWER_ERRORCODE_TYPE::NONE;
+		PLOTTER_INIT();
+		break;
+	}
+	
 	case DTP_COMMANDTYPE::Folder_Create:
 	{
 		status = DTP_ANSWER_STATUS::OK;
@@ -784,7 +789,6 @@ void HandlePacket(byte* data, int dataLen, uint16_t command) {
 
 void setup() {
 	
-	PLOTTER_INIT();
 	
 	pinMode(SpeakerPinPower, OUTPUT);
 	pinMode(SDCSPin, OUTPUT);
@@ -794,6 +798,8 @@ void setup() {
 		return;
 	}
 
+	PLOTTER_INIT();
+	
 	tmElements_t tm;
 	if (!RTC.read(tm))
 		if (!RTC.chipPresent()) {

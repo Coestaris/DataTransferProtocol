@@ -22,7 +22,7 @@ namespace FileBrowser
         {
             InitializeComponent();
         }
-        private string portName = "COM6";
+        private string portName = "COM8";
         private Sender Sender = new Sender(SenderType.SevenByteName, "Coestar");
         private SerialPort port;
         private Bitmap folderImage = new Bitmap("folder.png");
@@ -183,7 +183,15 @@ namespace FileBrowser
                         CurrentPath.RemoveAt(CurrentPath.Count - 1);
                         TrySetupFolder();
                     }
-                    else System.Windows.Forms.MessageBox.Show("Its not FOLDER");
+                    else
+                    {
+                        if(System.Windows.Forms.MessageBox.Show("Вы хотите передать файл на ПК и просмотреть его?", "Передача", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                        {
+                            string path = string.Join("", CurrentPath);
+                            string newPath = new FileInfo(System.Windows.Forms.Application.ExecutablePath).Directory.FullName + "\\" + listView1.SelectedItems[0].SubItems[0].Text;
+                            if (new ReceiveDialog(Master, path + (path != "/" ? "/" : "") + listView1.SelectedItems[0].SubItems[0].Text, newPath).ShowDialog() == DialogResult.OK) System.Diagnostics.Process.Start(newPath);
+                        }
+                    }
                 else
                 {
                     string path = listView1.SelectedItems[0].SubItems[0].Text.Trim('[', ']');
@@ -195,7 +203,15 @@ namespace FileBrowser
 
         private void button1_Click(object sender, EventArgs e)
         {
-
+            if (listView1.SelectedItems.Count == 1)
+            {
+                var a = new ReceiveDialog(Master);
+                string path = string.Join("", CurrentPath);
+                a.textBox_deviceName.Text = path + (path != "/" ? "/" : "") + listView1.SelectedItems[0].SubItems[0].Text;
+                a.ShowDialog();
+            }
+            else new ReceiveDialog(Master).ShowDialog();
+            TrySetupFolder();
         }
 
         int lastColumn = 0;
@@ -238,13 +254,57 @@ namespace FileBrowser
         private void button2_Click(object sender, EventArgs e)
         {
             if (listView1.SelectedItems.Count == 1)
-                System.Windows.Forms.Clipboard.SetText(listView1.SelectedItems[0].SubItems[0].Text);
+            {
+                string path = string.Join("", CurrentPath);
+                System.Windows.Forms.Clipboard.SetText(path + (path != "/" ? "/" : "") + listView1.SelectedItems[0].SubItems[0].Text);
+            }
         }
 
         private void button3_Click(object sender, EventArgs e)
         {
             new SendDialog(Master).ShowDialog();
             TrySetupFolder();
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            TrySetupFolder();
+        }
+
+        private void button5_Click(object sender, EventArgs e)
+        {
+
+            if (listView1.SelectedItems.Count == 1)
+            {
+                string path = string.Join("", CurrentPath);
+
+                if (listView1.SelectedItems[0].SubItems[1].Text != "<folder>")
+                {
+                    var a = Master.CreateFileHandler(path + (path != "/" ? "/" : "") + listView1.SelectedItems[0].SubItems[0].Text);
+                    try
+                    {
+                        a.Delete();
+                        TrySetupFolder();
+                    }
+                    catch
+                    {
+                        System.Windows.Forms.MessageBox.Show("Сan`t delete File", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                } else
+                {
+                    var a = Master.CreateDirectoryHandler(path + (path != "/" ? "/" : "") + listView1.SelectedItems[0].SubItems[0].Text);
+                    try
+                    {
+                        a.Delete(true);
+                        TrySetupFolder();
+                    }
+                    catch
+                    {
+                        System.Windows.Forms.MessageBox.Show("Сan`t delete Dir", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+            else System.Windows.Forms.MessageBox.Show("Select File or Dir","Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 

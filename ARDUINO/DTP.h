@@ -172,6 +172,7 @@ enum class DTP_COMMANDTYPE : uint16_t
 	File_Open = 0x11c, //+
 	File_Close = 0x11d, //+
 	File_Exists = 0x11e, //+
+	Plotter_RefreshConfig = 0x120,
 };
 
 enum class DTP_ANSWER_STATUS

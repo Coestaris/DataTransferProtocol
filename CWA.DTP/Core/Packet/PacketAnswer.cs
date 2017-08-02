@@ -23,13 +23,14 @@
 
 */
 
+using System;
 using System.Linq;
 
 namespace CWA.DTP
 {
     public class PacketAnswer
     {
-        public CommandType Command { get; set; }
+        public UInt16 Command { get; set; }
         public Sender Sender { get; set; }
         public AnswerStatus Status { get; set; }
         public AnswerDataType DataType { get; set; }
@@ -41,7 +42,7 @@ namespace CWA.DTP
         {
             if (base_.IsEmpty) { IsEmpty = true; return; };
             if (base_.Data == null || base_.Data.Length < 4) { IsEmpty = true; return; };
-            Command = (CommandType)HelpMethods.GetNumber(base_.Data[0], base_.Data[1]);
+            Command = HelpMethods.GetNumber(base_.Data[0], base_.Data[1]);
             Status = (AnswerStatus)base_.Data[2];
             DataType = ((AnswerDataType)base_.Data[3]);
             Sender = base_.Sender;

@@ -221,56 +221,51 @@ void Read() {
 #endif
 
 
-
-File PLOTTER_CONFIG_FILE;
 uint8_t PLOTTER_MOTOR_PINS[3][2] =
-{ { PLOTTER_XSTEP, PLOTTER_XDIR },
-{ PLOTTER_YSTEP, PLOTTER_YDIR },
-{ PLOTTER_ZSTEP, PLOTTER_ZDIR } };
-
-uint32_t PLOTTER_work = PLOTTER_WORK;
-uint32_t PLOTTER_idle = PLOTTER_IDLE;
+		{ { PLOTTER_XSTEP, PLOTTER_XDIR },
+		  { PLOTTER_YSTEP, PLOTTER_YDIR },
+		  { PLOTTER_ZSTEP, PLOTTER_ZDIR } };
+uint8_t PLOTTER_PAUSELED = PLOTTER_PauseLed;
+uint8_t PLOTTER_PAUSECOM = PLOTTER_PauseCom;
+uint16_t PLOTTER_work = PLOTTER_WORK;
+uint16_t PLOTTER_idle = PLOTTER_IDLE;
 bool PLOTTER_pause = false;
 bool PLOTTER_com = false;
-uint32_t PLOTTER_DelayTime = false;
+uint32_t PLOTTER_DelayTime = 50;
 
 
 void PLOTTER_INIT()
 {
 	if (SD.exists(CONFIGNAME))
 	{
-		PLOTTER_CONFIG_FILE = SD.open(CONFIGNAME, O_READ | O_WRITE);
+		File PLOTTER_CONFIG_FILE = SD.open(CONFIGNAME, O_READ);
 		PLOTTER_MOTOR_PINS[0][0] = PLOTTER_CONFIG_FILE.read();
 		PLOTTER_MOTOR_PINS[0][1] = PLOTTER_CONFIG_FILE.read();
 		PLOTTER_MOTOR_PINS[1][0] = PLOTTER_CONFIG_FILE.read();
 		PLOTTER_MOTOR_PINS[1][1] = PLOTTER_CONFIG_FILE.read();
 		PLOTTER_MOTOR_PINS[2][0] = PLOTTER_CONFIG_FILE.read();
 		PLOTTER_MOTOR_PINS[2][1] = PLOTTER_CONFIG_FILE.read();
-		PLOTTER_work = (short)(PLOTTER_CONFIG_FILE.read() | (PLOTTER_CONFIG_FILE.read() << 8));
-		PLOTTER_idle = (short)(PLOTTER_CONFIG_FILE.read() | (PLOTTER_CONFIG_FILE.read() << 8));
+		PLOTTER_work = (uint16_t)(PLOTTER_CONFIG_FILE.read() | (PLOTTER_CONFIG_FILE.read() << 8));
+		PLOTTER_idle = (uint16_t)(PLOTTER_CONFIG_FILE.read() | (PLOTTER_CONFIG_FILE.read() << 8));
 		PLOTTER_pause = PLOTTER_CONFIG_FILE.read() == 1;
 		PLOTTER_com = PLOTTER_CONFIG_FILE.read() == 1;
-
+		PLOTTER_PAUSELED = PLOTTER_CONFIG_FILE.read();
+		PLOTTER_PAUSECOM = PLOTTER_CONFIG_FILE.read();
+		PLOTTER_CONFIG_FILE.close();
 	}
 	else PLOTTER_ResetToDefault();
-	pinMode(PLOTTER_PauseLed, OUTPUT);
-	pinMode(PLOTTER_PauseCom, OUTPUT);
-	for (int i = 0; i < 3; i++)
-	{
-		for (int count = 0; count < 2; count++)
-		{
-			pinMode(PLOTTER_MOTOR_PINS[i][count], OUTPUT);
-		}
-	}
+	pinMode(PLOTTER_PAUSELED, OUTPUT);
+	pinMode(PLOTTER_PAUSECOM, OUTPUT);
+	for (int i = 0; i < 3; i++) for (int count = 0; count < 2; count++) pinMode(PLOTTER_MOTOR_PINS[i][count], OUTPUT);
 	PLOTTER_DelayTime = 50;
-	digitalWrite(PLOTTER_PauseLed, PLOTTER_pause);
-	digitalWrite(PLOTTER_PauseCom, PLOTTER_com);
+	digitalWrite(PLOTTER_PAUSELED, PLOTTER_pause);
+	digitalWrite(PLOTTER_PAUSECOM, PLOTTER_com);
 }
 
 void PLOTTER_ResetToDefault()
 {
-	PLOTTER_CONFIG_FILE = SD.open(CONFIGNAME, O_READ | O_WRITE);
-	byte* data = new byte[12]
+	File PLOTTER_CONFIG_FILE = SD.open(CONFIGNAME, O_WRITE | O_CREAT);
+	byte* data = new byte[14]
 	{
 		PLOTTER_XSTEP,
 		PLOTTER_XDIR,
@@ -283,9 +278,12 @@ void PLOTTER_ResetToDefault()
 		(byte)(PLOTTER_IDLE & 0xFF),
 		(byte)((PLOTTER_IDLE >> 8) & 0xFF),
 		0,
-		0
+		0,
+		PLOTTER_PauseLed,
+		PLOTTER_PauseCom
 	};
-	PLOTTER_CONFIG_FILE.write(data, 12);
+	PLOTTER_CONFIG_FILE.write(data, 14);
+	PLOTTER_CONFIG_FILE.close();
 	delete[] data;
 }
 

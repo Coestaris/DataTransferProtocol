@@ -32,7 +32,7 @@ namespace CWA.DTP
     public struct Packet
     {
         public short Size { get; set; }
-        public CommandType Command { get; set; }
+        public UInt16 Command { get; set; }
         public Sender Sender { get; set; }
         public byte[] Data { get; set; }
         public byte[] Crc { get; set; }
@@ -46,7 +46,7 @@ namespace CWA.DTP
             get { return new Packet() { IsEmpty = true }; }
         }
 
-        public Packet(byte[] data, CommandType command, Sender sender)
+        public Packet(byte[] data, UInt16 command, Sender sender)
         {
             Data = data;
             Command = command;
@@ -103,7 +103,7 @@ namespace CWA.DTP
                 {
                     TotalData = data
                 };
-                var command = (CommandType)HelpMethods.GetNumber(data[2], data[3]);
+                var command = (UInt16)HelpMethods.GetNumber(data[2], data[3]);
                 var sender = new Sender(SenderType.UnNamedByteMask);
                 var sendertype = (SenderType)data[4];
                 sender.Type = sendertype;
@@ -126,14 +126,14 @@ namespace CWA.DTP
             }
         }
 
-        static public Packet GetPacket(CommandType type, byte[] data, Sender sender)
+        static public Packet GetPacket(UInt16 type, byte[] data, Sender sender)
         {
             var result = new Packet(data, type, sender);
             var resdata = new byte[result.Size];
             var sizeBytes = HelpMethods.SplitNumber(result.Size + 255);
             resdata[0] = sizeBytes.Item1;
             resdata[1] = sizeBytes.Item2;
-            var commandBytes = HelpMethods.SplitNumber((int)type);
+            var commandBytes = HelpMethods.SplitNumber((UInt16)type);
             resdata[2] = commandBytes.Item1;
             resdata[3] = commandBytes.Item2;
             resdata[4] = (byte)sender.Type;

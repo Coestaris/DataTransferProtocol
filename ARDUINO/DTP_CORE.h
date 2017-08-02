@@ -85,7 +85,7 @@ const int DirectoryBufferSize PROGMEM = 40;
 
 	void Read();
 
-	void HandlePacket(byte* data, int dataLen, uint16_t command);
+	void HandlePacket(byte* data, uint32_t dataLen, uint16_t command);
 #pragma endregion
 
 #pragma region Plotter

@@ -1,6 +1,6 @@
 ﻿namespace FileBrowser
 {
-    partial class SendDialog
+    partial class ReceiveDialog
     {
         /// <summary>
         /// Required designer variable.
@@ -37,11 +37,11 @@
             this.textBox_pcName = new System.Windows.Forms.TextBox();
             this.button_pick = new System.Windows.Forms.Button();
             this.textBox_deviceName = new System.Windows.Forms.TextBox();
-            this.button_send = new System.Windows.Forms.Button();
+            this.button_receive = new System.Windows.Forms.Button();
             this.panel1 = new System.Windows.Forms.Panel();
-            this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
             this.label_oldName = new System.Windows.Forms.Label();
             this.label_newName = new System.Windows.Forms.Label();
+            this.saveFileDialog = new System.Windows.Forms.SaveFileDialog();
             this.panel1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -50,7 +50,7 @@
             this.progressBar1.Location = new System.Drawing.Point(12, 51);
             this.progressBar1.Name = "progressBar1";
             this.progressBar1.Size = new System.Drawing.Size(449, 33);
-            this.progressBar1.Style = System.Windows.Forms.ProgressBarStyle.Marquee;
+            this.progressBar1.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
             this.progressBar1.TabIndex = 0;
             // 
             // button_abort
@@ -68,42 +68,42 @@
             this.label_name.AutoSize = true;
             this.label_name.Location = new System.Drawing.Point(13, 13);
             this.label_name.Name = "label_name";
-            this.label_name.Size = new System.Drawing.Size(35, 13);
+            this.label_name.Size = new System.Drawing.Size(10, 13);
             this.label_name.TabIndex = 2;
-            this.label_name.Text = "label1";
+            this.label_name.Text = " ";
             // 
             // label_percentage
             // 
             this.label_percentage.AutoSize = true;
             this.label_percentage.Location = new System.Drawing.Point(13, 32);
             this.label_percentage.Name = "label_percentage";
-            this.label_percentage.Size = new System.Drawing.Size(35, 13);
+            this.label_percentage.Size = new System.Drawing.Size(10, 13);
             this.label_percentage.TabIndex = 3;
-            this.label_percentage.Text = "label2";
+            this.label_percentage.Text = " ";
             // 
             // label_timeleft
             // 
             this.label_timeleft.AutoSize = true;
             this.label_timeleft.Location = new System.Drawing.Point(13, 94);
             this.label_timeleft.Name = "label_timeleft";
-            this.label_timeleft.Size = new System.Drawing.Size(35, 13);
+            this.label_timeleft.Size = new System.Drawing.Size(10, 13);
             this.label_timeleft.TabIndex = 4;
-            this.label_timeleft.Text = "label3";
+            this.label_timeleft.Text = " ";
             // 
             // label_speed
             // 
             this.label_speed.AutoSize = true;
             this.label_speed.Location = new System.Drawing.Point(13, 114);
             this.label_speed.Name = "label_speed";
-            this.label_speed.Size = new System.Drawing.Size(35, 13);
+            this.label_speed.Size = new System.Drawing.Size(10, 13);
             this.label_speed.TabIndex = 5;
-            this.label_speed.Text = "label4";
+            this.label_speed.Text = " ";
             // 
             // textBox_pcName
             // 
             this.textBox_pcName.Location = new System.Drawing.Point(106, 15);
             this.textBox_pcName.Name = "textBox_pcName";
-            this.textBox_pcName.Size = new System.Drawing.Size(311, 20);
+            this.textBox_pcName.Size = new System.Drawing.Size(310, 20);
             this.textBox_pcName.TabIndex = 6;
             // 
             // button_pick
@@ -123,21 +123,21 @@
             this.textBox_deviceName.Size = new System.Drawing.Size(364, 20);
             this.textBox_deviceName.TabIndex = 8;
             // 
-            // button_send
+            // button_receive
             // 
-            this.button_send.Location = new System.Drawing.Point(366, 78);
-            this.button_send.Name = "button_send";
-            this.button_send.Size = new System.Drawing.Size(104, 33);
-            this.button_send.TabIndex = 10;
-            this.button_send.Text = "Отправить";
-            this.button_send.UseVisualStyleBackColor = true;
-            this.button_send.Click += new System.EventHandler(this.button4_Click);
+            this.button_receive.Location = new System.Drawing.Point(366, 78);
+            this.button_receive.Name = "button_receive";
+            this.button_receive.Size = new System.Drawing.Size(104, 33);
+            this.button_receive.TabIndex = 10;
+            this.button_receive.Text = "Получить";
+            this.button_receive.UseVisualStyleBackColor = true;
+            this.button_receive.Click += new System.EventHandler(this.button4_Click);
             // 
             // panel1
             // 
-            this.panel1.Controls.Add(this.label_newName);
             this.panel1.Controls.Add(this.label_oldName);
-            this.panel1.Controls.Add(this.button_send);
+            this.panel1.Controls.Add(this.label_newName);
+            this.panel1.Controls.Add(this.button_receive);
             this.panel1.Controls.Add(this.textBox_deviceName);
             this.panel1.Controls.Add(this.button_pick);
             this.panel1.Controls.Add(this.textBox_pcName);
@@ -146,28 +146,28 @@
             this.panel1.Size = new System.Drawing.Size(515, 123);
             this.panel1.TabIndex = 11;
             // 
-            // openFileDialog
-            // 
-            this.openFileDialog.FileName = "file.file";
-            this.openFileDialog.Filter = "Any File|*.*";
-            // 
             // label_oldName
             // 
             this.label_oldName.Location = new System.Drawing.Point(12, 14);
             this.label_oldName.Name = "label_oldName";
-            this.label_oldName.Size = new System.Drawing.Size(80, 35);
-            this.label_oldName.TabIndex = 13;
-            this.label_oldName.Text = "Имя файла\r\nна ПК";
+            this.label_oldName.Size = new System.Drawing.Size(88, 35);
+            this.label_oldName.TabIndex = 12;
+            this.label_oldName.Text = "Новое имя\r\nна ПК";
             // 
             // label_newName
             // 
             this.label_newName.Location = new System.Drawing.Point(12, 47);
             this.label_newName.Name = "label_newName";
             this.label_newName.Size = new System.Drawing.Size(88, 35);
-            this.label_newName.TabIndex = 14;
-            this.label_newName.Text = "Новое имя\r\nна девайсе";
+            this.label_newName.TabIndex = 11;
+            this.label_newName.Text = "Имя файла\r\nна утсройстве";
             // 
-            // SendDialog
+            // saveFileDialog
+            // 
+            this.saveFileDialog.FileName = "file.file";
+            this.saveFileDialog.Filter = "Any File|*.*";
+            // 
+            // ReceiveDialog
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -180,11 +180,11 @@
             this.Controls.Add(this.button_abort);
             this.Controls.Add(this.progressBar1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
-            this.Name = "SendDialog";
+            this.Name = "ReceiveDialog";
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "Диалог отправки файлов";
-            this.Load += new System.EventHandler(this.SendDialog_Load);
+            this.Text = "Диалог получения файлов";
+            this.Load += new System.EventHandler(this.ReceiveDialog_Load);
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
             this.ResumeLayout(false);
@@ -203,10 +203,10 @@
         private System.Windows.Forms.TextBox textBox_pcName;
         private System.Windows.Forms.Button button_pick;
         public System.Windows.Forms.TextBox textBox_deviceName;
-        private System.Windows.Forms.Button button_send;
+        private System.Windows.Forms.Button button_receive;
         private System.Windows.Forms.Panel panel1;
-        private System.Windows.Forms.OpenFileDialog openFileDialog;
-        private System.Windows.Forms.Label label_newName;
+        private System.Windows.Forms.SaveFileDialog saveFileDialog;
         private System.Windows.Forms.Label label_oldName;
+        private System.Windows.Forms.Label label_newName;
     }
 }

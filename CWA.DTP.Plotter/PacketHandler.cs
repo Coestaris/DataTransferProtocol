@@ -23,40 +23,42 @@
 
 */
 
-#define SimpleCRC
-
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
-namespace CWA.DTP
+namespace CWA.DTP.Plotter
 {
-    public static class HelpMethods
+    internal class PacketHandler
     {
-        public static Tuple<byte, byte> SplitNumber(int num)
+        private static readonly byte[] EmptyData = { 1 };
+
+        private PacketAnswer GetResult(CommandType command)
         {
-            byte low = (byte)(num & 0xFF);
-            byte high = (byte)((num >> 8) & 0xFF);
-            return new Tuple<byte, byte>(low, high);
+            return Listener.SendAndListenPacket(Packet.GetPacket((UInt16)command, EmptyData, Sender));
         }
 
-        public static UInt16 GetNumber(byte low, byte high)
+        private PacketAnswer GetResult(CommandType command, byte[] data)
         {
-            return (UInt16)(low | (high << 8));
+            return Listener.SendAndListenPacket(Packet.GetPacket((UInt16)command, data, Sender));
         }
 
-#if SimpleCRC
-        public static unsafe int ComputeChecksum(byte* data_p, int length) 
-        {
-            byte x;
-            ushort crc = 0xFFFF;
-            while (length-- != 0)
-            {
-                x = (byte)(crc >> 8 ^ *data_p++);
-                x ^= (byte)(x >> 4);
-                crc = (ushort)((crc << 8) ^ ((ushort)(x << 12)) ^ ((ushort)(x << 5)) ^ ((ushort)x));
-            }
-            return crc;
-        }
-#endif 
+        public Sender Sender { get; set; }
 
+        public PacketListener Listener { get; set; }
+
+        public PacketHandler(Sender sender, PacketListener listener)
+        {
+            Listener = listener;
+            Sender = sender;
+        }
+
+        public bool RefreshConfig()
+        {
+            var res = GetResult(CommandType.Plotter_RefreshConfig);
+            return !res.IsEmpty;
+        }
+        
     }
 }

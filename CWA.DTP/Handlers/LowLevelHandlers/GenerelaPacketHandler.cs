@@ -30,25 +30,10 @@ using System.Text;
 
 namespace CWA.DTP
 {
-    internal class PacketHandler
+
+    internal class GenerelaPacketHandler : AbstractPakcetHandler
     {
-        private static readonly byte[] EmptyData = { 1 };
-
-        private PacketAnswer GetResult(CommandType command)
-        {
-            return Listener.SendAndListenPacket(Packet.GetPacket(command, EmptyData, Sender));
-        }
-
-        private PacketAnswer GetResult(CommandType command, byte[] data)
-        {
-            return Listener.SendAndListenPacket(Packet.GetPacket(command, data, Sender));
-        }
-
-        public Sender Sender { get; set; }
-
-        public PacketListener Listener { get; set; }
-
-        public PacketHandler(Sender sender, PacketListener listener)
+        public GenerelaPacketHandler(Sender sender, PacketListener listener)
         {
             Listener = listener;
             Sender = sender;
@@ -60,13 +45,13 @@ namespace CWA.DTP
         {
             public PacketAnswer BaseAnswer { get; private set; }
 
-            public CommandType Command { get; private set; }
+            public UInt16 Command { get; private set; }
 
             protected ArgumentException WrongTypeException = new ArgumentException("Wrong Type or Nullale answer");
 
             public bool IsEmpty { get; private set; } = true;
 
-            protected bool Init(CommandType defType, PacketAnswer answer)
+            protected bool Init(UInt16 defType, PacketAnswer answer)
             {
                 Command = defType;
                 BaseAnswer = answer;
@@ -82,7 +67,7 @@ namespace CWA.DTP
 
             internal PacketAnswerTotalInfo(PacketAnswer answer)
             {
-                if (!Init(CommandType.GetInfo, answer)) throw WrongTypeException;
+                if (!Init((UInt16)CommandType.GetInfo, answer)) throw WrongTypeException;
                 DI = new DeviceInfo()
                 {
                     Board = (Board)(answer.Data[0]),
@@ -111,7 +96,7 @@ namespace CWA.DTP
 
             internal PacketAnswerCardInfo(PacketAnswer answer)
             {
-                if (!Init(CommandType.GetSDInfo, answer)) throw WrongTypeException;
+                if (!Init((UInt16)CommandType.GetSDInfo, answer)) throw WrongTypeException;
                 CI = new CardInfo()
                 {
                     ManufacturerID = answer.Data[0],
@@ -160,7 +145,7 @@ namespace CWA.DTP
 
             internal PacketAnswerFileInfo(PacketAnswer answer, string name)
             {
-                if (!Init(CommandType.File_GetFileInfo, answer)) throw WrongTypeException;
+                if (!Init((UInt16)CommandType.File_GetFileInfo, answer)) throw WrongTypeException;
                 FI = new SdCardDirectoryFileInfo()
                 {
                     FileDirectorySize = BitConverter.ToInt32(answer.Data, 0),
@@ -232,7 +217,7 @@ namespace CWA.DTP
         public class FileLengthRequestResult
         {
             public FileDirHandleResult Status { get; internal set; } = FileDirHandleResult.Fail;
-            public uint Length { get; internal set; } = 0;
+            public UInt32 Length { get; internal set; } = 0;
 
             internal FileLengthRequestResult() { }
         }

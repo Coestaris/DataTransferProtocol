@@ -40,7 +40,7 @@ namespace CWA.DTP.FileTransfer
 
         public int PacketLength { get; set; } = 3200;
 
-        internal PacketHandler BaseHandler;
+        internal GenerelaPacketHandler BaseHandler;
 
         internal FileSender(int _packetLength, FileTransferSecurityFlags flags)
         {
@@ -101,7 +101,7 @@ namespace CWA.DTP.FileTransfer
         private bool HandleFiles(string NewName)
         {
             var res = BaseHandler.File_Create(NewName);
-            if (res == PacketHandler.FileDirHandleResult.Fail)
+            if (res == GenerelaPacketHandler.FileDirHandleResult.Fail)
             {
                 RaiseErrorEvent(new FileSenderErrorArgs(FileSenderError.CantCreateFile, true));
                 return false;
@@ -121,7 +121,7 @@ namespace CWA.DTP.FileTransfer
                 }
             }*/
 
-            if (BaseHandler.File_Open(NewName, true) != PacketHandler.WriteReadFileHandleResult.OK)
+            if (BaseHandler.File_Open(NewName, true) != GenerelaPacketHandler.WriteReadFileHandleResult.OK)
             {
                 RaiseErrorEvent(new FileSenderErrorArgs(FileSenderError.CantOpenFile, true));
                 return false;
@@ -132,7 +132,7 @@ namespace CWA.DTP.FileTransfer
         private bool CompareLength()
         {
             var sizeResult = BaseHandler.File_GetLength();
-            if (sizeResult.Status == PacketHandler.FileDirHandleResult.Fail)
+            if (sizeResult.Status == GenerelaPacketHandler.FileDirHandleResult.Fail)
             {
                 RaiseErrorEvent(new FileSenderErrorArgs(FileSenderError.CantGetFileSize, true));
                 return false;
@@ -147,8 +147,8 @@ namespace CWA.DTP.FileTransfer
 
         private bool CompareHash()
         {
-            var crcres = BaseHandler.File_GetCrC16(PacketHandler.HashAlgorithm.CRC32);
-            if (crcres.Status != PacketHandler.WriteReadFileHandleResult.OK)
+            var crcres = BaseHandler.File_GetCrC16(GenerelaPacketHandler.HashAlgorithm.CRC32);
+            if (crcres.Status != GenerelaPacketHandler.WriteReadFileHandleResult.OK)
             {
                 RaiseErrorEvent(new FileSenderErrorArgs(FileSenderError.CantGetHashOfFile, true));
                 return false;

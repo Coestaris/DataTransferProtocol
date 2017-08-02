@@ -57,7 +57,7 @@ namespace CWA.DTP
                 {
                     reader = new SerialPacketReader(port, 500);
                     writer = new SerialPacketWriter(port);
-                    var a = new PacketHandler(Sender.Nullable, new PacketListener(reader, writer));
+                    var a = new GenerelaPacketHandler(Sender.Nullable, new PacketListener(reader, writer));
                     if (a.Device_Test())
                     {
                         reader.TimeOutInterval = TimeOutInterval;

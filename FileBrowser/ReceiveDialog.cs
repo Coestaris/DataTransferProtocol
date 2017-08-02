@@ -7,49 +7,55 @@ using System.Windows.Forms;
 
 namespace FileBrowser
 {
-    public partial class SendDialog : Form
+    public partial class ReceiveDialog : Form
     {
-        public SendDialog()
+        public ReceiveDialog()
         {
             InitializeComponent();
         }
 
-        private void SendDialog_Load(object sender, EventArgs e)
+        private void SetupReceiver()
         {
-            fileSender = master.CreateFileSender(FileTransferSecurityFlags.VerifyLengh);
-            fileSender.PacketLength = PacketSize;
-            fileSender.SendingProcessChanged += FileSender_SendingProcessChanged;
-            fileSender.SendingError += FileSender_SendingError;
-            fileSender.SendingEnd += FileSender_SendingEnd;
+            fileReceiver = master.CreateFileReceiver(FileTransferSecurityFlags.VerifyLengh);
+            fileReceiver.PacketLength = PacketSize;
+            fileReceiver.ReceiveProcessChanged += FileSender_ReceiverProcessChanged;
+            fileReceiver.ReceiveError += FileSender_ReceiverError;
+            fileReceiver.ReceivingEnd += FileSender_ReceiverEnd;
         }
 
         private DateTime startTime;
         private long totalBytes;
         private int PacketSize = 2000;
         private DTPMaster master;
-        private FileSender fileSender;
+        private FileReceiver fileReceiver;
 
-        public SendDialog(DTPMaster master)
+        public ReceiveDialog(DTPMaster master)
         {
             InitializeComponent();
             this.master = master;
+            SetupReceiver();
             textBox_pcName.Text = "C:\\File.txt";
             textBox_deviceName.Text = "/File.txt";
         }
 
-        public SendDialog(DTPMaster master, string oldName, string newName)
+        public ReceiveDialog(DTPMaster master, string oldName, string newName)
         {
             InitializeComponent();
-            SetupSending(oldName, oldName);
+            this.master = master;
+            SetupReceiver();
+            SetupSending(newName, oldName);
         }
 
-        private void FileSender_SendingEnd(FileTransferEndArgs arg)
+        private void FileSender_ReceiverEnd(FileTransferEndArgs arg)
         {
             Console.WriteLine("Done in {0}! Speed {1:0.##} KBytes/s", arg.TimeSpend, totalBytes / arg.TimeSpend / 1024);
-            FormCloseThread();
+            if (arg.IsForcedEnd) DialogResult = DialogResult.Cancel;
+            else DialogResult = DialogResult.OK;
+
+            //FormCloseThread();
         }
 
-        private void FileSender_SendingError(FileSenderErrorArgs arg)
+        private void FileSender_ReceiverError(FileReceiverErrorArgs arg)
         {
             Console.Write("ERROR! Code {0}, IsCritical {1}", arg.Error.ToString(), arg.IsCritical);
             MessageBox.Show(string.Format("Проиошла ошибка. Код ошибки: {0}.\nВозможно продолжать отравку: {1}", arg.Error, arg.IsCritical ? "нет" : "да"), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1);
@@ -83,23 +89,25 @@ namespace FileBrowser
             {
                 var total = arg.PacketTrasfered + arg.PacketsLeft;
                 progressBar1.Maximum = (int)total;
-                progressBar1.Value = (int)arg.PacketTrasfered;
 
+                if ((int)arg.PacketTrasfered > progressBar1.Maximum) progressBar1.Maximum = (int)arg.PacketTrasfered;
+
+                progressBar1.Value = (int)arg.PacketTrasfered;
                 label_percentage.Text = string.Format("Завершенно {0:0.##}% процесса", (double)arg.PacketTrasfered / total * 100);
-                if (arg.TimeLeft > 60) label_timeleft.Text = string.Format("Времени осталось: {0:0} сек. ({1:0.#} мин)", arg.TimeLeft, arg.TimeLeft / 60f);
+                if(arg.TimeLeft > 60) label_timeleft.Text = string.Format("Времени осталось: {0:0} сек. ({1:0.#} мин)", arg.TimeLeft, arg.TimeLeft / 60f);
                 else label_timeleft.Text = string.Format("Времени осталось: {0:0} сек.", arg.TimeLeft);
                 label_speed.Text = string.Format("Скорость передачи: {0:0.##} КБайт", arg.Speed);
             }
         }
 
-        private void FileSender_SendingProcessChanged(FileTransferProcessArgs arg)
+        private void FileSender_ReceiverProcessChanged(FileTransferProcessArgs arg)
         {
             SendingProcessChangedThread(arg);
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
-            fileSender.StopAsync();
+            fileReceiver.StopAsync();
         }
 
         private void button4_Click(object sender, EventArgs e)
@@ -110,22 +118,40 @@ namespace FileBrowser
 
         private void SetupSending(string OldName, string NewName)
         {
-            panel1.Visible = false;
-            startTime = DateTime.Now;
-            totalBytes = new FileInfo(OldName).Length;
-            fileSender.SendFileAsync(OldName, NewName);
-            label_name.Text = string.Format("{0}  ->  {1}", OldName, NewName);
+            try
+            {
+                var a = master.CreateFileHandler(NewName).Open(false);
+
+                panel1.Visible = false;
+                startTime = DateTime.Now;
+                totalBytes = a.Length;
+
+                a.Close();
+            } catch(Exception ex)
+            {
+                if (MessageBox.Show(
+                 string.Format("Произошла ошибка типа {0}.\n{2}\n\nСтек вызовов:\n{1}",
+                 ex.GetType().FullName, ex.StackTrace, ex.Message),
+                 "Error", MessageBoxButtons.OK, MessageBoxIcon.Error) == DialogResult.OK) Close();
+            }
+            fileReceiver.ReceiveFileAsync(OldName, NewName);
+            label_name.Text = string.Format("{1}  ->  {0}", OldName, NewName);
         }
 
         private void button2_Click(object sender, EventArgs e)
         {
-            if (openFileDialog.ShowDialog() == DialogResult.OK)
+            if (saveFileDialog.ShowDialog() == DialogResult.OK)
             {
-                textBox_pcName.Text = openFileDialog.FileName;
+                textBox_pcName.Text = saveFileDialog.FileName;
                 if (textBox_pcName.Text.Contains("\\"))
                     textBox_deviceName.Text = '/' + textBox_pcName.Text.Split('\\').Last();
                 else textBox_deviceName.Text = '/' + textBox_pcName.Text;
             }
+        }
+
+        private void ReceiveDialog_Load(object sender, EventArgs e)
+        {
+
         }
     }
 }
