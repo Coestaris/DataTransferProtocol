@@ -75,7 +75,7 @@
     <Compile Include="Handlers\LowLevelHandlers\ExtentionMethod.cs" />
     <Compile Include="Handlers\LowLevelHandlers\Enums.cs" />
     <Compile Include="Handlers\LowLevelHandlers\FileInfo.cs" />
-    <Compile Include="Handlers\LowLevelHandlers\GenerelaPacketHandler.cs" />
+    <Compile Include="Handlers\LowLevelHandlers\GeneralPacketHandler.cs" />
     <Compile Include="Handlers\FileHandlers\SdCardBinnaryFile.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

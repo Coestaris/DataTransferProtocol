@@ -28,9 +28,9 @@ using System.Linq;
 
 namespace CWA.DTP
 {
-    internal static class ExtentionMethod
+    public static class ExtentionMethod
     {
-        internal static IEnumerable<IEnumerable<T>> Split<T>(this T[] array, int size)
+        public static IEnumerable<IEnumerable<T>> Split<T>(this T[] array, int size)
         {
             for (var i = 0; i < (float)array.Length / size; i++)
             {

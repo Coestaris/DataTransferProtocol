@@ -45,9 +45,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CommandType.cs" />
-    <Compile Include="PacketHandler.cs" />
+    <Compile Include="PlotterPacketHandler.cs" />
     <Compile Include="PlotterConfig.cs" />
     <Compile Include="PlotterContent.cs" />
+    <Compile Include="PlotterContentTable.cs" />
+    <Compile Include="PrintMaster.cs" />
     <Compile Include="VectorMetaData.cs" />
     <Compile Include="PlotterConfigOptions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

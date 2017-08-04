@@ -29,11 +29,11 @@ namespace CWA.DTP
 {
     public sealed class SdCardBinnaryFile
     {
-        internal GenerelaPacketHandler ph;
+        internal GeneralPacketHandler ph;
         internal SdCardFile ParentFile;
         private UInt32 cacheLength;
 
-        internal SdCardBinnaryFile(SdCardFile ParentFile, GenerelaPacketHandler ph)
+        internal SdCardBinnaryFile(SdCardFile ParentFile, GeneralPacketHandler ph)
         {
             this.ph = ph;
             this.ParentFile = ParentFile;
@@ -193,7 +193,7 @@ namespace CWA.DTP
             if (CursorPos + 1 > cacheLength)
                 throw new ArgumentOutOfRangeException();
             var res = ph.File_Read(CursorPos, 1);
-            if(res.Status == GenerelaPacketHandler.WriteReadFileHandleResult.OK)
+            if(res.Status == GeneralPacketHandler.WriteReadFileHandleResult.OK)
             {
                 CursorPos += 1;
                 return new SdCardBinnaryFileReadResult<object>(res.Result[0], true);
@@ -206,7 +206,7 @@ namespace CWA.DTP
             if (CursorPos + 1 > cacheLength)
                 throw new ArgumentOutOfRangeException();
             var res = ph.File_Read(CursorPos, 1);
-            if (res.Status == GenerelaPacketHandler.WriteReadFileHandleResult.OK)
+            if (res.Status == GeneralPacketHandler.WriteReadFileHandleResult.OK)
             {
                 CursorPos += 1;
                 return new SdCardBinnaryFileReadResult<object>(res.Result[0] == 1, true);
@@ -219,7 +219,7 @@ namespace CWA.DTP
             if (CursorPos + 2 > cacheLength)
                 throw new ArgumentOutOfRangeException();
             var res = ph.File_Read(CursorPos, 2);
-            if (res.Status == GenerelaPacketHandler.WriteReadFileHandleResult.OK)
+            if (res.Status == GeneralPacketHandler.WriteReadFileHandleResult.OK)
             {
                 CursorPos += 2;
                 return new SdCardBinnaryFileReadResult<object>(BitConverter.ToInt16(res.Result, 0), true);
@@ -232,7 +232,7 @@ namespace CWA.DTP
             if (CursorPos + 2 > cacheLength)
                 throw new ArgumentOutOfRangeException();
             var res = ph.File_Read(CursorPos, 2);
-            if (res.Status == GenerelaPacketHandler.WriteReadFileHandleResult.OK)
+            if (res.Status == GeneralPacketHandler.WriteReadFileHandleResult.OK)
             {
                 CursorPos += 2;
                 return new SdCardBinnaryFileReadResult<object>(BitConverter.ToUInt16(res.Result, 0), true);
@@ -245,7 +245,7 @@ namespace CWA.DTP
             if (CursorPos + 4 > cacheLength)
                 throw new ArgumentOutOfRangeException();
             var res = ph.File_Read(CursorPos, 4);
-            if (res.Status == GenerelaPacketHandler.WriteReadFileHandleResult.OK)
+            if (res.Status == GeneralPacketHandler.WriteReadFileHandleResult.OK)
             {
                 CursorPos += 4;
                 return new SdCardBinnaryFileReadResult<object>(BitConverter.ToInt32(res.Result, 0), true);
@@ -258,7 +258,7 @@ namespace CWA.DTP
             if (CursorPos + 4 > cacheLength)
                 throw new ArgumentOutOfRangeException();
             var res = ph.File_Read(CursorPos, 4);
-            if (res.Status == GenerelaPacketHandler.WriteReadFileHandleResult.OK)
+            if (res.Status == GeneralPacketHandler.WriteReadFileHandleResult.OK)
             {
                 CursorPos += 4;
                 return new SdCardBinnaryFileReadResult<object>(BitConverter.ToUInt32(res.Result, 0), true);
@@ -271,7 +271,7 @@ namespace CWA.DTP
             if (CursorPos + 8 > cacheLength)
                 throw new ArgumentOutOfRangeException();
             var res = ph.File_Read(CursorPos, 8);
-            if (res.Status == GenerelaPacketHandler.WriteReadFileHandleResult.OK)
+            if (res.Status == GeneralPacketHandler.WriteReadFileHandleResult.OK)
             {
                 CursorPos += 8;
                 return new SdCardBinnaryFileReadResult<object>(BitConverter.ToInt64(res.Result, 0), true);
@@ -284,7 +284,7 @@ namespace CWA.DTP
             if (CursorPos + 8 > cacheLength)
                 throw new ArgumentOutOfRangeException();
             var res = ph.File_Read(CursorPos, 8);
-            if (res.Status == GenerelaPacketHandler.WriteReadFileHandleResult.OK)
+            if (res.Status == GeneralPacketHandler.WriteReadFileHandleResult.OK)
             {
                 CursorPos += 8;
                 return new SdCardBinnaryFileReadResult<object>(BitConverter.ToUInt64(res.Result, 0), true);
@@ -297,7 +297,7 @@ namespace CWA.DTP
             if (CursorPos + 4 > cacheLength)
                 throw new ArgumentOutOfRangeException();
             var res = ph.File_Read(CursorPos, 4);
-            if (res.Status == GenerelaPacketHandler.WriteReadFileHandleResult.OK)
+            if (res.Status == GeneralPacketHandler.WriteReadFileHandleResult.OK)
             {
                 CursorPos += 4;
                 return new SdCardBinnaryFileReadResult<object>(BitConverter.ToSingle(res.Result, 0), true);
@@ -310,7 +310,7 @@ namespace CWA.DTP
             if (CursorPos + 8 > cacheLength)
                 throw new ArgumentOutOfRangeException();
             var res = ph.File_Read(CursorPos, 8);
-            if (res.Status == GenerelaPacketHandler.WriteReadFileHandleResult.OK)
+            if (res.Status == GeneralPacketHandler.WriteReadFileHandleResult.OK)
             {
                 CursorPos += 8;
                 return new SdCardBinnaryFileReadResult<object>(BitConverter.ToDouble(res.Result, 0), true);
@@ -324,7 +324,7 @@ namespace CWA.DTP
             if (CursorPos + length > cacheLength)
                 throw new ArgumentOutOfRangeException();
             var res = ph.File_Read(CursorPos, length);
-            if (res.Status == GenerelaPacketHandler.WriteReadFileHandleResult.OK)
+            if (res.Status == GeneralPacketHandler.WriteReadFileHandleResult.OK)
             {
                 CursorPos += length;
                 return new SdCardBinnaryFileReadResult<byte[]>(res.Result, true);

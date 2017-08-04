@@ -27,18 +27,18 @@ using System;
 
 namespace CWA.DTP
 {
-    internal abstract class AbstractPakcetHandler
+    public abstract class AbstractPakcetHandler
     {
         protected static readonly byte[] EmptyData = { 1 };
 
-        protected PacketAnswer GetResult(CommandType command)
+        protected PacketAnswer GetResult(UInt16 command)
         {
-            return Listener.SendAndListenPacket(Packet.GetPacket((UInt16)command, EmptyData, Sender));
+            return Listener.SendAndListenPacket(Packet.GetPacket(command, EmptyData, Sender));
         }
 
-        protected PacketAnswer GetResult(CommandType command, byte[] data)
+        protected PacketAnswer GetResult(UInt16 command, byte[] data)
         {
-            return Listener.SendAndListenPacket(Packet.GetPacket((UInt16)command, data, Sender));
+            return Listener.SendAndListenPacket(Packet.GetPacket(command, data, Sender));
         }
 
         public Sender Sender { get; set; }

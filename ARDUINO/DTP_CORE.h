@@ -106,11 +106,13 @@ const int DirectoryBufferSize PROGMEM = 40;
 #define PLOTTER_ZSTEP 7
 #define PLOTTER_WORK 50 
 #define PLOTTER_IDLE 40
+#define PLOTTER_UPSTEPS 1650
+#define PLOTTER_UPCORRECTSTEPS 50
 #define CONFIGNAME "/config.cfg"
-
-
-
+	
 	void PLOTTER_INIT();
+
+	void PLOTTER_RUN(String Path, float XCoef, float YCoef);
 
 	void PLOTTER_ResetToDefault();
 

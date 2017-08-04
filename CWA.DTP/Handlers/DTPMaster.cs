@@ -9,23 +9,39 @@ namespace CWA.DTP
 {
     public sealed class DTPMaster
     {
-        internal GenerelaPacketHandler ph;
+        internal GeneralPacketHandler ph;
+
+        public PacketListener Listener
+        {
+            get
+            {
+                return ph.Listener;
+            }
+        }
+
+        public Sender Sender
+        {
+            get
+            {
+                return ph.Sender;
+            }
+        }
 
         public DTPMaster(IPacketReader reader, IPacketWriter writer)
         {
-            ph = new GenerelaPacketHandler(new Sender(SenderType.SevenByteName), new PacketListener(reader, writer));
+            ph = new GeneralPacketHandler(new Sender(SenderType.SevenByteName), new PacketListener(reader, writer));
             Device = new DeviceControl() { ParentMaster = this };
         }
 
         public DTPMaster(IPacketReader reader, IPacketWriter writer, string SenderName)
         {
-            ph = new GenerelaPacketHandler(new Sender(SenderType.SevenByteName, SenderName), new PacketListener(reader, writer));
+            ph = new GeneralPacketHandler(new Sender(SenderType.SevenByteName, SenderName), new PacketListener(reader, writer));
             Device = new DeviceControl() { ParentMaster = this };
         }
 
         public DTPMaster(Sender sender, PacketListener listener)
         {
-            ph = new GenerelaPacketHandler(sender, listener);
+            ph = new GeneralPacketHandler(sender, listener);
             Device = new DeviceControl() { ParentMaster = this };
         }
 

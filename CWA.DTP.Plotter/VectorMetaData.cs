@@ -10,11 +10,22 @@ namespace CWA.DTP.Plotter
     {
         private static int CountOfPreviews = 0;
 
-        public string Name { get; private set; }
-        public VectType Type  { get; private set; }
-        public UInt16 Height { get; private set; }
-        public UInt16 Width { get; private set; }
-        public Bitmap Preview { get; private set; }
+        public string Name { get; internal set; }
+        public VectType Type  { get; internal set; }
+        public UInt16 Height { get; internal set; }
+        public UInt16 Width { get; internal set; }
+        public Bitmap Preview
+        {
+            get
+            {
+                if (!LoadedPreview)
+                    UploadPreview();
+                return PreviewCache;
+            }
+        }
+
+        private bool LoadedPreview;
+        private Bitmap PreviewCache;
 
         internal UInt16 Index;
 
@@ -22,14 +33,34 @@ namespace CWA.DTP.Plotter
 
         public void UploadPreview()
         {
-            if (!Directory.Exists("Temp")) Directory.CreateDirectory("Temp");
-            var fileSender = Parrent.Master.CreateFileReceiver(FileTransfer.FileTransferSecurityFlags.VerifyLengh);
-            string FileName = string.Format("Temp//preview{0}.png", CountOfPreviews++);
-            fileSender.ReceivingEnd += (e) =>
+            string pcName = string.Format("Data//Cache//{0}.p", Index);
+            string dName = string.Format("{0}.p", Index);
+            if (File.Exists(pcName))
             {
-                Preview = new Bitmap(FileName);
-            };
-            fileSender.ReceiveFileSync(FileName, Index + ".p");
+                UInt32 dCRC32 = Parrent.ContentTable.PreviewHashes[Index];
+                UInt32 pcCRC32 = CrCHandler.CRC32(pcName);
+                if (dCRC32 == pcCRC32)
+                {
+                    PreviewCache = new Bitmap(pcName);
+                    return;
+                };
+            }
+            var fileSender = Parrent.Master.CreateFileReceiver(FileTransfer.FileTransferSecurityFlags.VerifyLengh);
+            fileSender.PacketLength = 2000;
+            if (!fileSender.ReceiveFileSync(pcName, dName))
+                throw new FileHandlerException("Не удалось передать миниатюру вектора");
+            PreviewCache = new Bitmap(pcName);
+            LoadedPreview = true;
+        }
+
+        public override string ToString()
+        {
+            return string.Format("Name: {0}\nWidth: {1}\nHeight: {2}\nType: {3}", Name, Width, Height, Type.ToString());
+        }
+
+        internal VectorMetaData(PlotterContent parrent)
+        {
+            Parrent = parrent;
         }
 
         internal VectorMetaData(byte[] data, PlotterContent parrent)
@@ -39,7 +70,7 @@ namespace CWA.DTP.Plotter
             Type = (VectType)data[stringLen + 2];
             Height = (UInt16)(data[stringLen + 3] | (data[stringLen + 4] << 8));
             Width = (UInt16)(data[stringLen + 5] | (data[stringLen + 6] << 8));
-            Name = new string(data.Skip(2).Take(stringLen).Select(p=>(char)p).ToArray());
+            Name = new string(data.Skip(2).Take(stringLen).ToList().FindAll(p=> p!= 0).Select(p=>(char)p).ToArray());
         }
 
         internal byte[] ToByteArray()
@@ -47,7 +78,7 @@ namespace CWA.DTP.Plotter
             var arr = new byte[Name.Length + 7];
             arr[0] = (byte)(Name.Length & 0xFF);
             arr[1] = (byte)((Name.Length >> 8) & 0xFF);
-            Buffer.BlockCopy(Name.ToCharArray(), 0, arr, 2, Name.Length);
+            Buffer.BlockCopy(Name.Select(p => (byte)p).ToArray(), 0, arr, 2, Name.Length);
             arr[Name.Length + 2] = (byte)Type;
             arr[Name.Length + 3] = (byte)(Height & 0xFF);
             arr[Name.Length + 4] = (byte)((Height >> 8) & 0xFF);

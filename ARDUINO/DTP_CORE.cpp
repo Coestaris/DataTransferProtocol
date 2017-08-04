@@ -233,6 +233,8 @@ bool PLOTTER_pause = false;
 bool PLOTTER_com = false;
 uint32_t PLOTTER_DelayTime = 50;
 
+int16_t PLOTTER_UpSteps = PLOTTER_UPSTEPS;
+int16_t PLOTTER_UpCorrectSteps = PLOTTER_UPCORRECTSTEPS;
 
 void PLOTTER_INIT()
 {
@@ -251,6 +253,8 @@ void PLOTTER_INIT()
 		PLOTTER_com = PLOTTER_CONFIG_FILE.read() == 1;
 		PLOTTER_PAUSELED = PLOTTER_CONFIG_FILE.read();
 		PLOTTER_PAUSECOM = PLOTTER_CONFIG_FILE.read();
+		PLOTTER_UpSteps = (int16_t)(PLOTTER_CONFIG_FILE.read() | (PLOTTER_CONFIG_FILE.read() << 8));
+		PLOTTER_UpCorrectSteps = (int16_t)(PLOTTER_CONFIG_FILE.read() | (PLOTTER_CONFIG_FILE.read() << 8));
 		PLOTTER_CONFIG_FILE.close();
 	}
 	else PLOTTER_ResetToDefault();
@@ -262,10 +266,102 @@ void PLOTTER_INIT()
 	digitalWrite(PLOTTER_PAUSECOM, PLOTTER_com);
 }
 
+//#define DebugPrint
+
+void PLOTTER_RUN(String Path, float XCoef, float YCoef)
+{
+	File PrintFile = SD.open(Path.c_str(), O_READ);
+	if (!PrintFile)
+		Error(ERROR_SD_CARDINIT);
+	uint32_t PrintFileSize = PrintFile.size();
+#ifdef DebugPrint
+	File DebugFILE = SD.open("printLog3.txt", O_CREAT | O_WRITE | O_APPEND);
+	DebugFILE.print("=====\nFileName:");
+	DebugFILE.println(Path);
+	DebugFILE.print("FleSize:");
+	DebugFILE.println(PrintFileSize);
+	DebugFILE.close();
+#endif
+	uint32_t counter = 0;
+	bool drawing = false;
+	while (counter != PrintFileSize)
+	{
+		byte* Bytes = new byte[4];
+		PrintFile.seek(counter);
+		if(PrintFile.readBytes(Bytes, 4) != 4)
+			Error(ERROR_SD_CARDINIT);;
+#ifdef DebugPrint
+		File DebugFILE = SD.open("printLog3.txt", O_CREAT | O_WRITE | O_APPEND);
+		DebugFILE.print("Counter: "); 
+		DebugFILE.print(counter);
+		DebugFILE.print("Bytes: [");
+		DebugFILE.print(Bytes[0]);
+		DebugFILE.print(",");
+		DebugFILE.print(Bytes[1]);
+		DebugFILE.print(",");
+		DebugFILE.print(Bytes[2]);
+		DebugFILE.print(",");
+		DebugFILE.print(Bytes[3]);
+		DebugFILE.print("]. ");
+#endif
+		if (Bytes[0] == 100 && Bytes[1] == 100 && Bytes[2] == 100 && Bytes[3] == 100)
+		{
+			drawing = true;
+			//DOWN!
+
+#ifdef DebugPrint
+			DebugFILE.print("DOWN! ");
+			DebugFILE.print(- PLOTTER_UpSteps);
+			DebugFILE.close();
+#endif
+			PLOTTER_MoveSM(0, 0, PLOTTER_UpSteps + PLOTTER_UpCorrectSteps);
+
+			counter += 4;
+			delete[] Bytes;
+			continue;
+		}
+		if (Bytes[0] == 101 && Bytes[1] == 101 && Bytes[2] == 101 && Bytes[3] == 101)
+		{
+			drawing = false;
+			//UP!
+#ifdef DebugPrint
+			DebugFILE.print("UP! ");
+			DebugFILE.print(PLOTTER_UpSteps + PLOTTER_UpCorrectSteps);
+			DebugFILE.close();
+#endif
+			PLOTTER_MoveSM(0, 0, -PLOTTER_UpSteps);
+			counter += 4;
+			delete[] Bytes;
+			continue;
+		}
+		int16_t dx = (int16_t)(((Bytes[1] & 0xFF) << 8) | (Bytes[0] & 0xFF));
+		int16_t dy = (int16_t)(((Bytes[3] & 0xFF) << 8) | (Bytes[2] & 0xFF));
+#ifdef DebugPrint
+		DebugFILE.print("MOVE! ");
+		DebugFILE.print(dx);
+		DebugFILE.print(",");
+		DebugFILE.print(dy);
+		DebugFILE.print("||");
+		DebugFILE.print(XCoef, 4);
+		DebugFILE.print(",");
+		DebugFILE.print(XCoef, 4);
+		DebugFILE.print("||");
+		DebugFILE.print((int32_t)(dx * XCoef));
+		DebugFILE.print(",");
+		DebugFILE.println((int32_t)(dx * XCoef));
+		DebugFILE.close();
+#endif
+		delete[] Bytes;
+		PLOTTER_MoveSM((int32_t)(dx * XCoef), (int32_t)(dy * YCoef), 0);
+		counter += 4;
+	}
+	PrintFile.close();
+}
+
 void PLOTTER_ResetToDefault()
 {
 	File PLOTTER_CONFIG_FILE = SD.open(CONFIGNAME, O_WRITE | O_CREAT);
-	byte* data = new byte[14]
+	byte* data = new byte[18]
 	{
 		PLOTTER_XSTEP,
 		PLOTTER_XDIR,
@@ -280,29 +376,88 @@ void PLOTTER_ResetToDefault()
 		0,
 		0,
 		PLOTTER_PauseLed,
-		PLOTTER_PauseCom
+		PLOTTER_PauseCom,
+		(byte)(PLOTTER_UPSTEPS & 0xFF),
+		(byte)((PLOTTER_UPSTEPS >> 8) & 0xFF),
+		(byte)(PLOTTER_UPCORRECTSTEPS & 0xFF),
+		(byte)((PLOTTER_UPCORRECTSTEPS >> 8) & 0xFF),
 	};
-	PLOTTER_CONFIG_FILE.write(data, 14);
+	PLOTTER_CONFIG_FILE.write(data, 18);
 	PLOTTER_CONFIG_FILE.close();
 	delete[] data;
 }
 
 void PLOTTER_moveForward(uint32_t sm)
 {
-
+	digitalWrite(PLOTTER_MOTOR_PINS[sm][1], HIGH);
+	digitalWrite(PLOTTER_MOTOR_PINS[sm][0], HIGH);
+	digitalWrite(PLOTTER_MOTOR_PINS[sm][0], LOW);
 }
 
 void PLOTTER_moveBackward(uint32_t sm)
 {
-
+	digitalWrite(PLOTTER_MOTOR_PINS[sm][1], LOW);
+	digitalWrite(PLOTTER_MOTOR_PINS[sm][0], HIGH);
+	digitalWrite(PLOTTER_MOTOR_PINS[sm][0], LOW);
 }
 
 void PLOTTER_delayMicros(uint32_t wt)
 {
-
+	uint32_t mls;
+	uint16_t mks;
+	mls = (uint32_t)(wt / 1000);
+	mks = (uint16_t)(wt % 1000);
+	if (mls > 0) delay(mls);
+	if (mks > 0) delayMicroseconds(mks);
 }
 
 void PLOTTER_MoveSM(int32_t x, int32_t y, int32_t z)
 {
-
+	int32_t c[3], c2[3];
+	double c1[3], d[3];
+	int32_t m, i;
+	boolean flg;
+	c[0] = x;
+	c[1] = y;
+	c[2] = z;
+	m = 1;
+	for (i = 0; i < 3; i++)
+	{
+		if (m < abs(c[i])) m = abs(c[i]);
+	}
+	for (i = 0; i < 3; i++)
+	{
+		c1[i] = 0;
+		d[i] = 1.0 * c[i] / m;
+		c2[i] = 0;
+	}
+	flg = false;
+	for (i = 0; i < 3; i++)
+	{
+		if (abs(c1[i]) < abs(c[i])) flg = true;
+	}
+	while (flg)
+	{
+		flg = false;
+		for (i = 0; i < 3; i++)
+		{
+			if (abs(c1[i]) < abs(c[i]))
+				c1[i] += d[i];
+			if (abs(c1[i]) - abs(c2[i]) >= 0.5)
+			{
+				if (c[i]>0)
+				{
+					c2[i]++;
+					PLOTTER_moveForward(i);
+				}
+				else
+				{
+					c2[i]--;
+					PLOTTER_moveBackward(i);
+				}
+			}
+			if (abs(c1[i]) < abs(c[i])) flg = true;
+		}
+		PLOTTER_delayMicros(PLOTTER_DelayTime);
+	}
 }

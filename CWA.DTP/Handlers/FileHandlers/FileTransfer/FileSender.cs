@@ -40,7 +40,7 @@ namespace CWA.DTP.FileTransfer
 
         public int PacketLength { get; set; } = 3200;
 
-        internal GenerelaPacketHandler BaseHandler;
+        internal GeneralPacketHandler BaseHandler;
 
         internal FileSender(int _packetLength, FileTransferSecurityFlags flags)
         {
@@ -101,7 +101,7 @@ namespace CWA.DTP.FileTransfer
         private bool HandleFiles(string NewName)
         {
             var res = BaseHandler.File_Create(NewName);
-            if (res == GenerelaPacketHandler.FileDirHandleResult.Fail)
+            if (res == GeneralPacketHandler.FileDirHandleResult.Fail)
             {
                 RaiseErrorEvent(new FileSenderErrorArgs(FileSenderError.CantCreateFile, true));
                 return false;
@@ -121,7 +121,7 @@ namespace CWA.DTP.FileTransfer
                 }
             }*/
 
-            if (BaseHandler.File_Open(NewName, true) != GenerelaPacketHandler.WriteReadFileHandleResult.OK)
+            if (BaseHandler.File_Open(NewName, true) != GeneralPacketHandler.WriteReadFileHandleResult.OK)
             {
                 RaiseErrorEvent(new FileSenderErrorArgs(FileSenderError.CantOpenFile, true));
                 return false;
@@ -132,7 +132,7 @@ namespace CWA.DTP.FileTransfer
         private bool CompareLength()
         {
             var sizeResult = BaseHandler.File_GetLength();
-            if (sizeResult.Status == GenerelaPacketHandler.FileDirHandleResult.Fail)
+            if (sizeResult.Status == GeneralPacketHandler.FileDirHandleResult.Fail)
             {
                 RaiseErrorEvent(new FileSenderErrorArgs(FileSenderError.CantGetFileSize, true));
                 return false;
@@ -147,12 +147,13 @@ namespace CWA.DTP.FileTransfer
 
         private bool CompareHash()
         {
-            var crcres = BaseHandler.File_GetCrC16(GenerelaPacketHandler.HashAlgorithm.CRC32);
-            if (crcres.Status != GenerelaPacketHandler.WriteReadFileHandleResult.OK)
+            var crcres = BaseHandler.File_GetCrC32();
+            if (crcres.Status != GeneralPacketHandler.WriteReadFileHandleResult.OK)
             {
                 RaiseErrorEvent(new FileSenderErrorArgs(FileSenderError.CantGetHashOfFile, true));
                 return false;
             }
+            //TODO: CRC!!
             var localcrc = new CrCHandler().ComputeChecksumBytes(_data);
             if (crcres.Result[0] != localcrc[0] || crcres.Result[1] != localcrc[1]) RaiseErrorEvent(new FileSenderErrorArgs(FileSenderError.HashesNotEqual, false));
             return true;

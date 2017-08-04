@@ -17,7 +17,7 @@ namespace CWA.DTP.FileTransfer
 
         public int PacketLength { get; set; } = 3200;
 
-        internal GenerelaPacketHandler BaseHandler;
+        internal GeneralPacketHandler BaseHandler;
 
         //
         internal FileReceiver(int _packetLength, FileTransferSecurityFlags flags)

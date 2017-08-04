@@ -22,7 +22,7 @@ namespace FileBrowser
         {
             InitializeComponent();
         }
-        private string portName = "COM8";
+        private string portName = "COM11";
         private Sender Sender = new Sender(SenderType.SevenByteName, "Coestar");
         private SerialPort port;
         private Bitmap folderImage = new Bitmap("folder.png");

@@ -30,10 +30,9 @@ using System.Text;
 
 namespace CWA.DTP
 {
-
-    internal class GenerelaPacketHandler : AbstractPakcetHandler
+    internal class GeneralPacketHandler : AbstractPakcetHandler
     {
-        public GenerelaPacketHandler(Sender sender, PacketListener listener)
+        public GeneralPacketHandler(Sender sender, PacketListener listener)
         {
             Listener = listener;
             Sender = sender;
@@ -197,14 +196,6 @@ namespace CWA.DTP
             CantReadData
         }
 
-        public enum HashAlgorithm
-        {
-            CRC16,
-            CRC32,
-            CRC64,
-            CRC_CCITT
-        }
-
         public class DataRequestResult
         {
             public WriteReadFileHandleResult Status { get; internal set; } = WriteReadFileHandleResult.Fail;
@@ -243,13 +234,13 @@ namespace CWA.DTP
 
         public bool Device_Test()
         {
-            var result = GetResult(CommandType.Test);
+            var result = GetResult((UInt16)CommandType.Test);
             return !result.IsEmpty;
         }
 
         public bool Device_DataTest(byte[] data)
         {
-            var result = GetResult(CommandType.DataTest, data);
+            var result = GetResult((UInt16)CommandType.DataTest, data);
             return (!result.IsEmpty && result.Status == AnswerStatus.OK && result.Data.ToList().SequenceEqual(data));
         }
 
@@ -270,7 +261,7 @@ namespace CWA.DTP
 
         public FileDirHandleResult File_Create(string FileName)
         {
-            var result = GetResult(CommandType.File_CreateFile, Encoding.Default.GetBytes(FileName));
+            var result = GetResult((UInt16)CommandType.File_CreateFile, Encoding.Default.GetBytes(FileName));
             if (result.IsEmpty) return FileDirHandleResult.Fail;
             switch (result.Code)
             {
@@ -287,7 +278,7 @@ namespace CWA.DTP
 
         public FileExistsResult File_Exists(string FileName)
         {
-            var result = GetResult(CommandType.File_Exists, Encoding.Default.GetBytes(FileName));
+            var result = GetResult((UInt16)CommandType.File_Exists, Encoding.Default.GetBytes(FileName));
             if (result.IsEmpty) return FileExistsResult.Fail;
             if (result.Code == 1) return FileExistsResult.NotExists;
             else return FileExistsResult.Exists;
@@ -296,7 +287,7 @@ namespace CWA.DTP
 
         public FileDirHandleResult File_Delete(string FileName)
         {
-            var result = GetResult(CommandType.File_DeleteFile, Encoding.Default.GetBytes(FileName));
+            var result = GetResult((UInt16)CommandType.File_DeleteFile, Encoding.Default.GetBytes(FileName));
             if (result.IsEmpty) return FileDirHandleResult.Fail;
             switch (result.Code)
             {
@@ -316,7 +307,7 @@ namespace CWA.DTP
             var data = new List<byte>();
             data.AddRange(Encoding.Default.GetBytes(DirectoryName));
             data.Add(CreateNecessary ? (byte)1 : (byte)0);
-            var result = GetResult(CommandType.Folder_Create, data.ToArray());
+            var result = GetResult((UInt16)CommandType.Folder_Create, data.ToArray());
             if (result.IsEmpty) return FileDirHandleResult.Fail;
             switch (result.Code)
             {
@@ -338,7 +329,7 @@ namespace CWA.DTP
             var data = new List<byte>();
             data.AddRange(Encoding.Default.GetBytes(DirectoryName));
             data.Add(DeleteSubItems ? (byte)1 : (byte)0);
-            var result = GetResult(CommandType.Folder_Delete, data.ToArray());
+            var result = GetResult((UInt16)CommandType.Folder_Delete, data.ToArray());
             if (result.IsEmpty) return FileDirHandleResult.Fail;
             switch (result.Code)
             {
@@ -359,7 +350,7 @@ namespace CWA.DTP
         {
             var e = Encoding.Default.GetBytes(FileName).ToList();
             e.Add(ClearFile ? (byte)1 : (byte)0);
-            var result = GetResult(CommandType.File_Open, e.ToArray());
+            var result = GetResult((UInt16)CommandType.File_Open, e.ToArray());
             if (result.IsEmpty) return WriteReadFileHandleResult.Fail;
             switch(result.Code)
             {
@@ -374,10 +365,10 @@ namespace CWA.DTP
             }
         }
 
-        public DataRequestResult File_GetCrC16(HashAlgorithm Algorithm)
+        public DataRequestResult File_GetCrC32()
         {
             var result_ = new DataRequestResult();
-            var result = GetResult(CommandType.FILE_GetHashSumOfFile);
+            var result = GetResult((UInt16)CommandType.FILE_GetHashSumOfFile);
             if (result.IsEmpty)
             {
                 result_.Status = WriteReadFileHandleResult.Fail;
@@ -403,17 +394,17 @@ namespace CWA.DTP
 
         public PacketAnswerCardInfo Device_GetCardInfo()
         {
-            return new PacketAnswerCardInfo(GetResult(CommandType.GetSDInfo));
+            return new PacketAnswerCardInfo(GetResult((UInt16)CommandType.GetSDInfo));
         }
 
         public PacketAnswerFileInfo File_GetInfo(string Name)
         {
-            return new PacketAnswerFileInfo(GetResult(CommandType.File_GetFileInfo, Encoding.Default.GetBytes(Name)), Name);
+            return new PacketAnswerFileInfo(GetResult((UInt16)CommandType.File_GetFileInfo, Encoding.Default.GetBytes(Name)), Name);
         }
 
         public PacketAnswerTotalInfo Device_GetGlobalInfo()
         {
-            return new PacketAnswerTotalInfo(GetResult(CommandType.GetInfo));
+            return new PacketAnswerTotalInfo(GetResult((UInt16)CommandType.GetInfo));
         }
 
         public DataRequestResult File_Read(UInt32 offset, UInt32 length)
@@ -422,7 +413,7 @@ namespace CWA.DTP
             byte[] data_ = new byte[8];
             Buffer.BlockCopy(BitConverter.GetBytes(offset), 0, data_, 0, 4);
             Buffer.BlockCopy(BitConverter.GetBytes(length), 0, data_, 4, 4);
-            var result = GetResult(CommandType.File_GetFileData, data_);
+            var result = GetResult((UInt16)CommandType.File_GetFileData, data_);
             if (result.IsEmpty)
             {
                 result_.Status = WriteReadFileHandleResult.Fail;
@@ -449,7 +440,7 @@ namespace CWA.DTP
         public GetFilesOrDirsRequestResult Dir_GetFiles(string DirectoryName)
         {
             var files = new List<string>();
-            var result = GetResult(CommandType.File_GetFileTree, Encoding.Default.GetBytes(DirectoryName));
+            var result = GetResult((UInt16)CommandType.File_GetFileTree, Encoding.Default.GetBytes(DirectoryName));
             if (result.IsEmpty || result.Status == AnswerStatus.Error) return new GetFilesOrDirsRequestResult();
             string s = Encoding.Default.GetString(result.Data);
             files = s.Split((char)1).ToList().FindAll(p => !p.StartsWith("/") && p.Trim() != "").OrderBy(p => p).ToList();
@@ -463,7 +454,7 @@ namespace CWA.DTP
         public GetFilesOrDirsRequestResult Dir_GetSubDirs(string DirectoryName)
         {
            var dirs = new List<string>();
-            var result = GetResult(CommandType.File_GetFileTree, Encoding.Default.GetBytes(DirectoryName));
+            var result = GetResult((UInt16)CommandType.File_GetFileTree, Encoding.Default.GetBytes(DirectoryName));
             if (result.IsEmpty || result.Status == AnswerStatus.Error) return new GetFilesOrDirsRequestResult();
             string s = Encoding.Default.GetString(result.Data);
             var a = s.Split((char)1);
@@ -479,7 +470,7 @@ namespace CWA.DTP
         {
             var dirs = new List<string>();
             var files = new List<string>();
-            var result = GetResult(CommandType.File_GetFileTree, Encoding.Default.GetBytes(DirectoryName));
+            var result = GetResult((UInt16)CommandType.File_GetFileTree, Encoding.Default.GetBytes(DirectoryName));
             if (result.IsEmpty || result.Status == AnswerStatus.Error) return new GetFilesOrDirsRequestResult();
             string s = Encoding.Default.GetString(result.Data);
             var a = s.Split((char)1);
@@ -496,7 +487,7 @@ namespace CWA.DTP
         public FileLengthRequestResult File_GetLength()
         {
             UInt32 Length = 0;
-            var result = GetResult(CommandType.File_GetFileLength);
+            var result = GetResult((UInt16)CommandType.File_GetFileLength);
             if (result.IsEmpty) return new FileLengthRequestResult();
             if (result.Status == AnswerStatus.Error) return new FileLengthRequestResult();
             Length = BitConverter.ToUInt32(result.Data, 0);
@@ -509,20 +500,20 @@ namespace CWA.DTP
 
         public bool File_Close()
         {
-            var result = GetResult(CommandType.File_Close);
+            var result = GetResult((UInt16)CommandType.File_Close);
             return !result.IsEmpty;
         }
         
         public bool File_Rewrite(byte[] bytes)
         {
-            var result = GetResult(CommandType.File_WriteDataToFile, bytes);
+            var result = GetResult((UInt16)CommandType.File_WriteDataToFile, bytes);
             if (result.IsEmpty) return false;
             return result.Code == 0;
         }
 
         public bool File_Append(byte[] bytes)
         {
-            var result = GetResult(CommandType.File_AppendDataToFile, bytes);
+            var result = GetResult((UInt16)CommandType.File_AppendDataToFile, bytes);
             if (result.IsEmpty) return false;
             return result.Code == 0;
         }
@@ -538,14 +529,14 @@ namespace CWA.DTP
                 (byte)now.Month,
                 HelpMethods.SplitNumber(now.Year).Item1, HelpMethods.SplitNumber(now.Year).Item2
             };
-            var result = GetResult(CommandType.SetTime, data);
+            var result = GetResult((UInt16)CommandType.SetTime, data);
             return !result.IsEmpty;
         }
 
         public DateTimeRequestResult Device_GetTime()
         {
             var res = new DateTime();
-            var result = GetResult(CommandType.GetDateTime);
+            var result = GetResult((UInt16)CommandType.GetDateTime);
             if (result.IsEmpty) return new DateTimeRequestResult();
             res = new DateTime(
                     HelpMethods.GetNumber(result.Data[5], result.Data[6]),

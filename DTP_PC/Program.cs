@@ -1,36 +1,32 @@
 ﻿using CWA.DTP;
 using CWA.DTP.Plotter;
+using CWA.Vectors;
 using System;
+using System.IO;
+using System.Linq;
 
 namespace TestsForLib
 {
     public class Program
     {
-        static void Main(string[] args)
+        static unsafe void Main(string[] args)
         {
-
             if (!SerialPacketReader.FirstAvailable(5000, out var reader, out var writer))
             {
                 Console.WriteLine("cant find any device");
                 return;
             }
             var master = new DTPMaster(reader, writer);
-            var config = new PlotterConfig(master);
-            Console.WriteLine(config.Options);
+            var contentMaster = new PlotterContent(master);
 
-            config.Options.PinMappingYStep = 66;
-            config.Options.PinMappingXStep = 20;
-            config.Options.PinMappingZDirection = 128;
+            
+            var printMaster = new PrintMaster(master, 0.013f, 0.013f, new System.Drawing.SizeF(100, 100));
+            printMaster.PrintSync(1);
 
-            config.Upload();
-
-            Console.ReadKey();
-
-            config = new PlotterConfig(master);
-
-            Console.WriteLine(config.Options);
-
+            Console.WriteLine("ready to end");
             Console.ReadKey();
         }
     }
 }
+//printSize.Width / xmm / imageSize.Width
+//printSize.Width / xmm / imageSize.Width)

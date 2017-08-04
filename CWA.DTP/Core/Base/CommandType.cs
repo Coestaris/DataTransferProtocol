@@ -25,7 +25,7 @@
 
 namespace CWA.DTP
 {
-    internal enum CommandType
+    internal enum CommandType : uint
     {
         RunFile = 0x101, //+
         File_GetFileTree = 0x103, //+

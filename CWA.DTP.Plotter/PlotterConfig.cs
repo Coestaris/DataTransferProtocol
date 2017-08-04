@@ -10,7 +10,7 @@ namespace CWA.DTP.Plotter
     {
         private const string ConfigFileName = "/config.cfg";
 
-        internal const UInt16 ConfigFileLength = 14;
+        internal const UInt16 ConfigFileLength = 18;
 
         private DTPMaster Master;
 

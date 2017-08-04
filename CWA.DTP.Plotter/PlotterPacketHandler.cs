@@ -30,25 +30,9 @@ using System.Text;
 
 namespace CWA.DTP.Plotter
 {
-    internal class PacketHandler
+    internal class PlotterPacketHandler : AbstractPakcetHandler
     {
-        private static readonly byte[] EmptyData = { 1 };
-
-        private PacketAnswer GetResult(CommandType command)
-        {
-            return Listener.SendAndListenPacket(Packet.GetPacket((UInt16)command, EmptyData, Sender));
-        }
-
-        private PacketAnswer GetResult(CommandType command, byte[] data)
-        {
-            return Listener.SendAndListenPacket(Packet.GetPacket((UInt16)command, data, Sender));
-        }
-
-        public Sender Sender { get; set; }
-
-        public PacketListener Listener { get; set; }
-
-        public PacketHandler(Sender sender, PacketListener listener)
+        public PlotterPacketHandler(Sender sender, PacketListener listener)
         {
             Listener = listener;
             Sender = sender;
@@ -56,9 +40,23 @@ namespace CWA.DTP.Plotter
 
         public bool RefreshConfig()
         {
-            var res = GetResult(CommandType.Plotter_RefreshConfig);
+            var res = GetResult((UInt16)CommandType.Plotter_RefreshConfig);
             return !res.IsEmpty;
         }
-        
+
+        public bool StartPrinting(float XCoef, float YCoef, UInt16 Index)
+        {
+            byte[] ResBuff = new byte[10];
+            Buffer.BlockCopy(BitConverter.GetBytes(XCoef), 0, ResBuff, 0, 4);
+            Buffer.BlockCopy(BitConverter.GetBytes(YCoef), 0, ResBuff, 4, 4);
+            Buffer.BlockCopy(BitConverter.GetBytes(Index), 0, ResBuff, 8, 2);
+            var res = GetResult((UInt16)CommandType.Plotter_Print_Run, ResBuff);
+            return !res.IsEmpty;
+        }
+/*
+        Plotter_RefreshConfig = 0x120,
+        Plotter_Print_Run = 0x121,
+        Plotter_Print_Info = 0x122,
+        Plotter_Print_Abort = 0x123,*/
     }
 }
