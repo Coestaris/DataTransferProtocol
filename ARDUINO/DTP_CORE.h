@@ -12,6 +12,7 @@
 
 #define DTP_VERSION 1008
 
+#define RelayPin 10
 #define SpeakerPinPower 49
 #define SpeakerPin 48
 #define SDCSPin 53
@@ -112,7 +113,7 @@ const int DirectoryBufferSize PROGMEM = 40;
 	
 	void PLOTTER_INIT();
 
-	void PLOTTER_RUN(String Path, float XCoef, float YCoef);
+	void PLOTTER_RUN(String Path, uint16_t XCoef, uint16_t YCoef);
 
 	void PLOTTER_ResetToDefault();
 

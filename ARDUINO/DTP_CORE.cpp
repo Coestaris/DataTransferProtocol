@@ -268,14 +268,17 @@ void PLOTTER_INIT()
 
 //#define DebugPrint
 
-void PLOTTER_RUN(String Path, float XCoef, float YCoef)
+void PLOTTER_RUN(String Path, uint16_t XCoef, uint16_t YCoef)
 {
+	digitalWrite(RelayPin, 0);
+	delay(20);
+
 	File PrintFile = SD.open(Path.c_str(), O_READ);
 	if (!PrintFile)
 		Error(ERROR_SD_CARDINIT);
 	uint32_t PrintFileSize = PrintFile.size();
 #ifdef DebugPrint
-	File DebugFILE = SD.open("printLog3.txt", O_CREAT | O_WRITE | O_APPEND);
+	File DebugFILE = SD.open("printLog4.txt", O_CREAT | O_WRITE | O_APPEND);
 	DebugFILE.print("=====\nFileName:");
 	DebugFILE.println(Path);
 	DebugFILE.print("FleSize:");
@@ -290,8 +293,12 @@ void PLOTTER_RUN(String Path, float XCoef, float YCoef)
 		PrintFile.seek(counter);
 		if(PrintFile.readBytes(Bytes, 4) != 4)
 			Error(ERROR_SD_CARDINIT);;
+
+		//if (Serial.available() != 0)
+//			Read();
+
 #ifdef DebugPrint
-		File DebugFILE = SD.open("printLog3.txt", O_CREAT | O_WRITE | O_APPEND);
+		File DebugFILE = SD.open("printLog4.txt", O_CREAT | O_WRITE | O_APPEND);
 		DebugFILE.print("Counter: "); 
 		DebugFILE.print(counter);
 		DebugFILE.print("Bytes: [");
@@ -306,23 +313,20 @@ void PLOTTER_RUN(String Path, float XCoef, float YCoef)
 #endif
 		if (Bytes[0] == 100 && Bytes[1] == 100 && Bytes[2] == 100 && Bytes[3] == 100)
 		{
-			drawing = true;
 			//DOWN!
-
 #ifdef DebugPrint
 			DebugFILE.print("DOWN! ");
 			DebugFILE.print(- PLOTTER_UpSteps);
 			DebugFILE.close();
 #endif
 			PLOTTER_MoveSM(0, 0, PLOTTER_UpSteps + PLOTTER_UpCorrectSteps);
-
 			counter += 4;
+			PLOTTER_DelayTime = PLOTTER_work;
 			delete[] Bytes;
 			continue;
 		}
 		if (Bytes[0] == 101 && Bytes[1] == 101 && Bytes[2] == 101 && Bytes[3] == 101)
 		{
-			drawing = false;
 			//UP!
 #ifdef DebugPrint
 			DebugFILE.print("UP! ");
@@ -330,6 +334,7 @@ void PLOTTER_RUN(String Path, float XCoef, float YCoef)
 			DebugFILE.close();
 #endif
 			PLOTTER_MoveSM(0, 0, -PLOTTER_UpSteps);
+			PLOTTER_DelayTime = PLOTTER_idle;
 			counter += 4;
 			delete[] Bytes;
 			continue;
@@ -352,10 +357,13 @@ void PLOTTER_RUN(String Path, float XCoef, float YCoef)
 		DebugFILE.close();
 #endif
 		delete[] Bytes;
-		PLOTTER_MoveSM((int32_t)(dx * XCoef), (int32_t)(dy * YCoef), 0);
+		PLOTTER_MoveSM((int32_t)((int32_t)dx * (int32_t)XCoef), (int32_t)((int32_t)dy * (int32_t)YCoef), 0);
 		counter += 4;
 	}
 	PrintFile.close();
+
+	delay(20);
+	digitalWrite(RelayPin, 1);
 }
 
 void PLOTTER_ResetToDefault()

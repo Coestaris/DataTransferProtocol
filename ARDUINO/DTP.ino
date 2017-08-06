@@ -5,18 +5,10 @@
 File WriteFile;
 uint16_t PrintFileName;
 bool isOpenFile;
-float XCoef;
-float YCoef;
+uint16_t XCoef;
+uint16_t YCoef;
 bool ReqToStartPrint = false;
 int ii = 0;
-
-
-typedef union _FloatConverter {
-	float Float;
-	byte Bytes[4];
-} FloatConverter;
-
-FloatConverter fc1;
 
 void HandlePacket(byte* data, uint32_t dataLen, uint16_t command) {
 #pragma region Vars
@@ -38,22 +30,36 @@ void HandlePacket(byte* data, uint32_t dataLen, uint16_t command) {
 
 	switch ((DTP_COMMANDTYPE)command)
 	{
+		/*
+		case DTP_COMMANDTYPE::Plotter_Print_Info:
+		{
+			status = DTP_ANSWER_STATUS::OK;
+			error_code = DTP_ANSWER_ERRORCODE_TYPE::DATA;
+
+			dataBytesLen = 9;
+			dataBytes = new byte[dataBytesLen]
+			{
+				size & 0xFF,
+				(size >> 8) & 0xFF,
+				(size >> 16) & 0xFF,
+				(size >> 24) & 0xFF,
+
+				size & 0xFF,
+				(size >> 8) & 0xFF,
+				(size >> 16) & 0xFF,
+				(size >> 24) & 0xFF,
+			};
+			break;
+		}
+		*/
 		case DTP_COMMANDTYPE::Plotter_Print_Run:
 		{
 			status = DTP_ANSWER_STATUS::OK;
 			error_code = DTP_ANSWER_ERRORCODE_TYPE::CODE;
 			dataByte = 0;
-			fc1.Bytes[0] = data[0];
-			fc1.Bytes[1] = data[1];
-			fc1.Bytes[2] = data[2];
-			fc1.Bytes[3] = data[3];
-			XCoef = fc1.Float;
-			fc1.Bytes[0] = data[4];
-			fc1.Bytes[1] = data[5];
-			fc1.Bytes[2] = data[6];
-			fc1.Bytes[3] = data[7];
-			YCoef = fc1.Float;
-			PrintFileName = (uint16_t)(data[8] | (data[9] << 8));
+			XCoef = (uint16_t)(data[0] | (data[1] << 8));
+			YCoef = (uint16_t)(data[2] | (data[3] << 8));
+			PrintFileName = (uint16_t)(data[4] | (data[5] << 8));
 			ReqToStartPrint = true;
 			break;
 		}
@@ -811,10 +817,13 @@ void HandlePacket(byte* data, uint32_t dataLen, uint16_t command) {
 
 void setup()
 {
+	pinMode(RelayPin, OUTPUT);
+	digitalWrite(RelayPin, 1);
+
 	pinMode(SpeakerPinPower, OUTPUT);
 	pinMode(SDCSPin, OUTPUT);
 	Serial.begin(115200);
-	if (!SD.begin(SDCSPin, SPI_HALF_SPEED)) {
+	if (!SD.begin(SDCSPin, SPI_FULL_SPEED)) {
 		Error(ERROR_SD_INITSDCARD);
 		return;
 	}
@@ -839,8 +848,8 @@ void loop()
 
 	if (ReqToStartPrint)
 	{
-		ReqToStartPrint = false;
 		PLOTTER_RUN(String(PrintFileName) + ".v", XCoef, YCoef);
+		ReqToStartPrint = false;
 	} 
 }
 

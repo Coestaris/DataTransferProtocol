@@ -14,6 +14,7 @@ namespace CWA.DTP.Plotter
         public VectType Type  { get; internal set; }
         public UInt16 Height { get; internal set; }
         public UInt16 Width { get; internal set; }
+        public UInt16 Index { get; set; }
         public Bitmap Preview
         {
             get
@@ -26,9 +27,6 @@ namespace CWA.DTP.Plotter
 
         private bool LoadedPreview;
         private Bitmap PreviewCache;
-
-        internal UInt16 Index;
-
         private PlotterContent Parrent;
 
         public void UploadPreview()
@@ -55,7 +53,7 @@ namespace CWA.DTP.Plotter
 
         public override string ToString()
         {
-            return string.Format("Name: {0}\nWidth: {1}\nHeight: {2}\nType: {3}", Name, Width, Height, Type.ToString());
+            return string.Format("Name: {0}\nWidth: {1}\nHeight: {2}\nType: {3}\nIndex: {4}", Name, Width, Height, Type.ToString(), Index);
         }
 
         internal VectorMetaData(PlotterContent parrent)
@@ -82,8 +80,8 @@ namespace CWA.DTP.Plotter
             arr[Name.Length + 2] = (byte)Type;
             arr[Name.Length + 3] = (byte)(Height & 0xFF);
             arr[Name.Length + 4] = (byte)((Height >> 8) & 0xFF);
-            arr[Name.Length + 5] = (byte)(Height & 0xFF);
-            arr[Name.Length + 6] = (byte)((Height >> 8) & 0xFF);
+            arr[Name.Length + 5] = (byte)(Width & 0xFF);
+            arr[Name.Length + 6] = (byte)((Width >> 8) & 0xFF);
             return arr;
         }
     }
