@@ -34,12 +34,14 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="CWA_Vectors">
-      <HintPath>..\..\CnC_WFA\Vectors\bin\Debug\CWA_Vectors.dll</HintPath>
+    <Reference Include="Compresser, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\CnC_WFA\PlotterControl\DLLs\Compresser.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.IO.Compression.FileSystem" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -55,13 +57,13 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\CWA.DTP.Plotter\CWA.DTP.Plotter.csproj">
-      <Project>{38004aaa-a3c7-4875-8918-63910bded423}</Project>
-      <Name>CWA.DTP.Plotter</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\CWA.DTP\CWA.DTP.csproj">
+    <ProjectReference Include="..\..\PlotterControl\Lib\CWA.DTP\CWA.DTP.csproj">
       <Project>{476a54ca-91a4-437e-8fac-2cfef15ec7be}</Project>
       <Name>CWA.DTP</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\PlotterControl\Lib\CWA.Vectors\CWA.Vectors.csproj">
+      <Project>{154DBF89-C8B7-488B-A8EF-9CCBE76A0C10}</Project>
+      <Name>CWA.Vectors</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
